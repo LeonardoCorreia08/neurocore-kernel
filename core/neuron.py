@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 
 class LeakyIntegrateAndFire(nn.Module):
-    def __init__(self, num_neurons: int, threshold: float = 1.0, beta: float = 0.9):
+    def __init__(self, num_neurons: int, threshold: float = 0.5, beta: float = 0.9): # <--- Mude o threshold para 0.5
         super().__init__()
         self.num_neurons = num_neurons
         self.threshold = threshold
-        self.beta = beta  # Fator de decaimento (relativo à constante de tempo tau_m)
+        self.beta = beta
+        self.mem = torch.zeros(num_neurons)
         
         # Estado do potencial de membrana para cada neurônio
         self.mem = torch.zeros(num_neurons)

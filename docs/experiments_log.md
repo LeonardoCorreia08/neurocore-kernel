@@ -63,3 +63,17 @@ Analisando os dados da execução, é possível ver uma mudança de comportament
 Com a STDP pura anterior, o agente apenas acumulava disparos aleatórios sem direção clara. Com o **R-STDP**, o sinal de dopamina simulada (recompensa) atuou como o *"juiz"*, enviando a instrução fundamental para a rede: 
 
 > *"As sinapses que dispararam nos últimos milissegundos antes da recompensa fizeram a coisa certa; vamos consolidá-las."*
+
+![NeuroCore 0.1 Execution](./spiker_raster.png)
+
+# Análise de Telemetria: Raster Plot (spike_raster_3.png)
+
+![Raster Plot da SNN](./spike_raster_3.png)
+
+Este novo **Raster Plot (`spike_raster_3.png`)** demonstra perfeitamente a transição para uma rede neural pulsante (SNN) biologicamente ativa e funcional. 
+
+Analisando a telemetria visual gerada:
+
+* **Atividade Contínua e Dinâmica:** Ao contrário dos gráficos anteriores que estavam quase vazios, agora existem disparos distribuídos por toda a linha do tempo (ao longo dos 200 passos de simulação).
+* **Padrões Rítmicos Estáveis:** Os neurônios com os IDs **5, 8, 11 e 14** apresentam um padrão de disparo regular e constante, o que indica que a combinação de pesos ajustados por **R-STDP** e a memória de curto prazo estabilizaram a rede.
+* **Esparsidade Eficiente:** A rede não dispara em massa de forma caótica; apenas neurônios específicos respondem aos estímulos contextuais, mantendo a característica de **baixo consumo energético** essencial para a computação neuromórfica.
