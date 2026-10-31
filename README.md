@@ -226,6 +226,8 @@ A organização modular isola o núcleo matemático, as regiões cerebrais, as r
 ## 9. Primeiro Experimento Prático: NeuroCore 0.1
 
 A versão **NeuroCore 0.1** valida a capacidade de aprendizado autônomo antes da adição de visão ou audição complexas.
+[Ver Relatório de Experimentos](./docs/experiments_log.md)
+
 
 ### 9.1 Especificações da Versão 0.1
 * **Escala Inicial:** $1.000$ neurônios simulados.
