@@ -70,7 +70,7 @@ Com a STDP pura anterior, o agente apenas acumulava disparos aleatórios sem dir
 
 ![Raster Plot da SNN](./spike_raster.png)
 
-Este novo **Raster Plot (`spike_raster_3.png`)** demonstra perfeitamente a transição para uma rede neural pulsante (SNN) biologicamente ativa e funcional. 
+Este novo **Raster Plot  demonstra perfeitamente a transição para uma rede neural pulsante (SNN) biologicamente ativa e funcional. 
 
 Analisando a telemetria visual gerada:
 
