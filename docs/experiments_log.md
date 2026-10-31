@@ -30,3 +30,15 @@ Observando a saída do terminal, é possível notar o comportamento do sistema:
 * **Do Episódio 1 ao 20:** O contador de metas acumuladas permaneceu em `0`. O agente estava explorando a arena às cegas, já que os pesos sinápticos iniciais eram totalmente aleatórios e ainda não havia uma regra de aprendizado ativa (como o STDP) ajustando as sinapses.
 * **No Episódio 21:** A primeira meta foi alcançada (*Metas Atingidas Acumuladas: 1*) por puro acaso durante a movimentação aleatória do agente.
 * **Nos Episódios 33, 42, etc.:** Novas metas foram atingidas esporadicamente à medida que o agente cruzava com os alvos no mapa.
+
+
+![NeuroCore 0.2 Execution](./NeuroCore0.1stdp.png)
+
+## O que a análise técnica nos diz?
+
+Na neurociência computacional e em SNNs (*Spiking Neural Networks*), existe um desafio clássico: **a STDP (*Spike-Timing-Dependent Plasticity*) pura é não-supervisionada.**
+
+* Ela apenas ajusta as sinapses com base na proximidade temporal dos disparos (qual neurônio disparou antes de qual).
+* Ela não sabe se a ação tomada resultou em uma recompensa (chegar ao alvo) ou em algo irrelevante. 
+
+Sem um sinal de dopamina ou modulação por recompensa, a rede corre o risco de fortalecer conexões aleatórias que coincidiram temporalmente, mas que **não são úteis** para a tarefa de navegação.
