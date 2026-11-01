@@ -1,1 +1,19 @@
-'''Módulo: audio.py'''
+'''Modulo: audio.py'''
+import torch
+from perception.sensor_encoder import SensorEncoder
+
+class AudioEncoder:
+    def __init__(self, frequency_bands: int = 8):
+        self.frequency_bands = frequency_bands
+        self.encoder = SensorEncoder(max_rate=120.0)
+
+    def encode_spectrum(self, spectrum_tensor: torch.Tensor) -> torch.Tensor:
+        """
+        Converte bandas de frequÃªncia sonora em trens de spikes temporais.
+        """
+        if spectrum_tensor.numel() > self.frequency_bands:
+            features = spectrum_tensor.flatten()[:self.frequency_bands]
+        else:
+            features = torch.nn.functional.pad(spectrum_tensor.flatten(), (0, self.frequency_bands - spectrum_tensor.numel()))
+            
+        return self.encoder.encode_rate(features)
