@@ -25,7 +25,7 @@ def run_neurocore_02_experiment():
     
     W1 = torch.randn(hidden_dim, input_dim) * 0.5
     W2 = torch.randn(output_dim, hidden_dim) * 0.5
-    W_mem = torch.randn(hidden_dim, hidden_dim) * 0.2
+    W_mem = torch.randn(hidden_dim, hidden_dim) * 0.2  # Conexoes recorrentes de memoria
     
     rstdp_w1 = RSTDPManager(num_posts=hidden_dim, num_pres=input_dim, lr=0.05)
     rstdp_w2 = RSTDPManager(num_posts=output_dim, num_pres=hidden_dim, lr=0.05)
@@ -47,7 +47,7 @@ def run_neurocore_02_experiment():
         steps = 0
         
         while steps < 200:
-            x_sensory = torch.tensor(sensors, dtype=torch.float32)*2.0
+            x_sensory = torch.tensor(sensors, dtype=torch.float32)
             
             spk_sensory, _ = sensory_layer(x_sensory)
             
