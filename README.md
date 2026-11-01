@@ -37,7 +37,7 @@ O projeto busca executar estas funções:
 
 O núcleo de processamento usa redes neurais pulsantes (*Spiking Neural Networks*, SNN). O projeto não usa Transformers ou LLMs como núcleo de inteligência.
 
-> **Estado do projeto:** os registros fornecidos mostram testes funcionais de módulos, simulações com 10 mil neurônios, alocação e execução de ciclos de teste com 100 mil e 1 milhão de neurônios. Esses resultados não demonstram, por si só, inteligência geral, desempenho cognitivo em escala de um milhão de neurônios ou eficiência energética medida em hardware.
+> **Estado do projeto:** os registros fornecidos documentam testes de módulos, simulações com 10 mil neurônios e testes de alocação e execução de ciclos com 100 mil e 1 milhão de neurônios. Esses resultados, isoladamente, não demonstram inteligência geral, capacidade cognitiva validada em escala de um milhão de neurônios nem eficiência energética comprovada por medições de hardware.
 
 ## 2. Arquitetura em resumo
 
