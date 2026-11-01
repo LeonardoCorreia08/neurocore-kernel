@@ -1,9 +1,40 @@
-'''Modulo: learning_test.py'''
+'''Modulo: test_01_lif_base.py'''
 import torch
 import numpy as np
 from core.neuron import LeakyIntegrateAndFire
 from environment.world import VirtualWorld2D
 
+# =====================================================================
+# 1. TESTE UNITÁRIO: FÍSICA DA MEMBRANA LIF E GERENCIAMENTO DE ESTADO
+# =====================================================================
+def run_lif_membrane_test():
+    print("Iniciando Teste Dinâmico de Membrana (LIF)...")
+    
+    # Inicializa 1 neurônio com limiar de 1.0 e retenção de 0.9 (90%)
+    lif = LeakyIntegrateAndFire(num_neurons=1, threshold=1.0, decay=0.9)
+    
+    print("\n--- Fase 1: Acumulação e Disparo ---")
+    corrente = torch.tensor([0.4])
+    
+    for step in range(1, 6):
+        spike, mem = lif(corrente)
+        estado = "🔥 DISPARO e Reset!" if spike.item() > 0 else "Acumulando..."
+        print(f"Passo {step} | Corrente: 0.4 | Voltagem: {mem.item():.4f} | {estado}")
+
+    print("\n--- Fase 2: Decaimento (Leak) ---")
+    sem_corrente = torch.tensor([0.0])
+    for step in range(6, 9):
+        spike, mem = lif(sem_corrente)
+        print(f"Passo {step} | Corrente: 0.0 | Voltagem: {mem.item():.4f} | Vazamento")
+
+    print("\n--- Fase 3: Reset Manual ---")
+    lif.reset_state()
+    print(f"Após lif.reset_state() | Voltagem: {lif.mem.item():.4f}\n")
+
+
+# =====================================================================
+# 2. EXPERIMENTO PRINCIPAL: APRENDIZADO NO AMBIENTE VIRTUAL
+# =====================================================================
 def run_neurocore_01_experiment():
     print("Iniciando NeuroCore 0.1 - Experimento de Aprendizado Autonomo...")
     
@@ -28,6 +59,9 @@ def run_neurocore_01_experiment():
 
     for episode in range(num_episodes):
         sensors = world.reset()
+        
+        # PROVA DA MELHORIA 6: O reset_state() agora funciona perfeitamente, 
+        # impedindo que a energia de um episódio vaze para o outro!
         sensory_layer.reset_state()
         hidden_layer.reset_state()
         motor_layer.reset_state()
@@ -60,6 +94,7 @@ def run_neurocore_01_experiment():
             
             if done:
                 total_goals_reached += get_goal_counter(reward)
+                break # Quebra o loop se o episódio terminou, otimizando o processamento
 
         print(f"Episodio {episode + 1}/{num_episodes} | Passos: {steps} | Metas Atingidas Acumuladas: {total_goals_reached}")
 
@@ -68,5 +103,14 @@ def run_neurocore_01_experiment():
 def get_goal_counter(reward):
     return 1 if reward > 0 else 0
 
+# =====================================================================
+# EXECUÇÃO SEQUENCIAL
+# =====================================================================
 if __name__ == "__main__":
+    # Primeiro executa o teste isolado da membrana
+    run_lif_membrane_test()
+    
+    print("=" * 60)
+    
+    # Depois executa o seu teste original do mundo virtual
     run_neurocore_01_experiment()

@@ -1,34 +1,43 @@
+'''Modulo: core/neuron.py'''
 import torch
 import torch.nn as nn
 
 class LeakyIntegrateAndFire(nn.Module):
-    def __init__(self, num_neurons: int, threshold: float = 0.5, beta: float = 0.9): # <--- Mude o threshold para 0.5
+    def __init__(self, num_neurons: int, threshold: float = 1.0, decay: float = 0.9):
         super().__init__()
         self.num_neurons = num_neurons
         self.threshold = threshold
-        self.beta = beta
-        self.mem = torch.zeros(num_neurons)
-        
-        # Estado do potencial de membrana para cada neurônio
-        self.mem = torch.zeros(num_neurons)
+        self.decay = decay
+        self.mem = None
 
-    def forward(self, x_input: torch.Tensor):
-        """
-        x_input: Corrente recebida (I) no passo de tempo atual [batch_size, num_neurons]
-        Retorna:
-            spikes: Tensor binário indicando se o neurônio disparou (1) ou não (0)
-            self.mem: Potencial de membrana atualizado
-        """
-        # Equação de decaimento do potencial e acumulação da entrada
-        self.mem = self.beta * self.mem + x_input
+    def _init_state_if_needed(self, reference_tensor: torch.Tensor):
+        """Garante compatibilidade de lote (batch) e hardware (CPU/GPU)."""
+        if self.mem is None or self.mem.shape != reference_tensor.shape or self.mem.device != reference_tensor.device:
+            self.mem = torch.zeros_like(reference_tensor, device=reference_tensor.device)
+
+    def integrate(self, input_current: torch.Tensor):
+        """Etapa 1: Integração temporal da membrana com fator de vazamento (Leak)."""
+        self.mem = self.mem * self.decay + input_current
+
+    def fire(self) -> torch.Tensor:
+        """Etapa 2: Aplicação do limiar e geração do pulso (Spike)."""
+        return (self.mem >= self.threshold).float()
+
+    def apply_reset(self, spikes: torch.Tensor):
+        """Etapa 3: Reset local (zera a voltagem apenas dos neurônios que dispararam)."""
+        self.mem = self.mem * (1.0 - spikes)
+
+    def forward(self, input_current: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Ciclo de vida completo do neurônio em um passo de tempo."""
+        self._init_state_if_needed(input_current)
         
-        # Condição de disparo (spike)
-        spikes = (self.mem >= self.threshold).float()
-        
-        # Reset do potencial após o disparo (subtrai o limiar)
-        self.mem = self.mem - spikes * self.threshold
+        self.integrate(input_current)
+        spikes = self.fire()
+        self.apply_reset(spikes)
         
         return spikes, self.mem
 
     def reset_state(self):
-        self.mem = torch.zeros(self.num_neurons)
+        """Reset global (usado para limpar o ambiente entre episódios)."""
+        if self.mem is not None:
+            self.mem.zero_()

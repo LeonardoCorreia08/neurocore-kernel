@@ -29,7 +29,7 @@ def run_dynamic_1m_test():
     telemetry.start_measurement()
     
     total_spikes_registered = 0
-    time_steps = 50  # Reduzido para 50 passos pesados para viabilizar o tempo de execução local de teste, mantendo carga de 1M
+    time_steps = 1000  # Reduzido para 50 passos pesados para viabilizar o tempo de execução local de teste, mantendo carga de 1M
     
     for t in range(time_steps):
         # Estímulo dinâmico variável no tempo
