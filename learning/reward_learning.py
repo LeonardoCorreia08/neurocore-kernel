@@ -61,7 +61,7 @@ class RSTDPManager(nn.Module):
         [ITEM 22 OTIMIZADO]: Modulação Dopaminérgica puramente 1D.
         Retorna diretamente o vetor de deltas sem criar tensores esparsos intermediários.
         """
-        if self.eligibility_trace is None or reward == 0.0:
+        if self.eligibility_trace is None:
             delta_values = torch.zeros(sparse_indices.shape[1], device=sparse_indices.device)
         else:
             # Delta W = lr * Reward * Eligibility_Trace

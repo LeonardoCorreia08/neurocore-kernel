@@ -1,0 +1,251 @@
+{
+  "created_utc": "2026-11-01T17:16:40.148164+00:00",
+  "checkpoint_name": "latest_brain_engram_directional.pt",
+  "checkpoint_completed_training_episodes": 1000,
+  "device": "cpu",
+  "protocol": {
+    "episodes_per_map_seed": 100,
+    "map_seeds": [
+      510,
+      511,
+      512,
+      513,
+      514
+    ],
+    "plasticity_disabled_during_evaluation": true,
+    "checkpoint_weights_updated_during_evaluation": false,
+    "notes": [
+      "The same held-out maps are used for random and checkpoint policies.",
+      "Map seeds vary evaluation cases; they are not independent training seeds.",
+      "This test evaluates this saved checkpoint, unlike the fresh-training benchmark."
+    ]
+  },
+  "summary": {
+    "episodes": 500,
+    "random_success_rate_percent": 3.0,
+    "checkpoint_success_rate_percent": 2.2,
+    "random_mean_reward": -0.5178600000000001,
+    "checkpoint_mean_reward": -0.5223800000000001,
+    "checkpoint_mean_steps": 43.288,
+    "checkpoint_silent_decisions": 21644,
+    "checkpoint_total_decisions": 21644.0,
+    "checkpoint_silent_rate_percent": 100.0
+  },
+  "runs": [
+    {
+      "map_seed": 510,
+      "episodes": 100,
+      "random_policy": {
+        "success_rate": 0.01,
+        "successes": 1,
+        "episodes": 100,
+        "mean_reward": -0.5308,
+        "mean_steps": 43.31,
+        "action_counts": [
+          1109,
+          1066,
+          1105,
+          1051
+        ],
+        "action_frequencies": [
+          0.2560609558993304,
+          0.24613253290233203,
+          0.25513738166705147,
+          0.24266912953128608
+        ]
+      },
+      "saved_checkpoint": {
+        "success_rate": 0.0,
+        "successes": 0,
+        "episodes": 100,
+        "mean_reward": -0.5495000000000001,
+        "mean_steps": 43.19,
+        "action_counts": [
+          1045,
+          1086,
+          1134,
+          1054
+        ],
+        "action_frequencies": [
+          0.24195415605464227,
+          0.25144709423477657,
+          0.2625607779578606,
+          0.24403797175272054
+        ],
+        "silent_decisions": 4319
+      }
+    },
+    {
+      "map_seed": 511,
+      "episodes": 100,
+      "random_policy": {
+        "success_rate": 0.03,
+        "successes": 3,
+        "episodes": 100,
+        "mean_reward": -0.5150000000000001,
+        "mean_steps": 41.3,
+        "action_counts": [
+          1037,
+          1026,
+          1055,
+          1012
+        ],
+        "action_frequencies": [
+          0.251089588377724,
+          0.24842615012106536,
+          0.25544794188861986,
+          0.24503631961259079
+        ]
+      },
+      "saved_checkpoint": {
+        "success_rate": 0.06,
+        "successes": 6,
+        "episodes": 100,
+        "mean_reward": -0.4645000000000001,
+        "mean_steps": 44.67,
+        "action_counts": [
+          1117,
+          1078,
+          1125,
+          1147
+        ],
+        "action_frequencies": [
+          0.2500559659726886,
+          0.24132527423326616,
+          0.251846877098724,
+          0.25677188269532125
+        ],
+        "silent_decisions": 4467
+      }
+    },
+    {
+      "map_seed": 512,
+      "episodes": 100,
+      "random_policy": {
+        "success_rate": 0.04,
+        "successes": 4,
+        "episodes": 100,
+        "mean_reward": -0.5068,
+        "mean_steps": 40.02,
+        "action_counts": [
+          1016,
+          1048,
+          972,
+          966
+        ],
+        "action_frequencies": [
+          0.2538730634682659,
+          0.26186906546726635,
+          0.24287856071964017,
+          0.2413793103448276
+        ]
+      },
+      "saved_checkpoint": {
+        "success_rate": 0.03,
+        "successes": 3,
+        "episodes": 100,
+        "mean_reward": -0.5179,
+        "mean_steps": 40.61,
+        "action_counts": [
+          1015,
+          1009,
+          1040,
+          997
+        ],
+        "action_frequencies": [
+          0.24993843880817532,
+          0.24846097020438315,
+          0.2560945579906427,
+          0.24550603299679882
+        ],
+        "silent_decisions": 4061
+      }
+    },
+    {
+      "map_seed": 513,
+      "episodes": 100,
+      "random_policy": {
+        "success_rate": 0.06,
+        "successes": 6,
+        "episodes": 100,
+        "mean_reward": -0.4930000000000001,
+        "mean_steps": 39.68,
+        "action_counts": [
+          1045,
+          975,
+          1028,
+          920
+        ],
+        "action_frequencies": [
+          0.2633568548387097,
+          0.24571572580645162,
+          0.2590725806451613,
+          0.2318548387096774
+        ]
+      },
+      "saved_checkpoint": {
+        "success_rate": 0.02,
+        "successes": 2,
+        "episodes": 100,
+        "mean_reward": -0.5414000000000001,
+        "mean_steps": 44.4,
+        "action_counts": [
+          1084,
+          1112,
+          1097,
+          1147
+        ],
+        "action_frequencies": [
+          0.24414414414414415,
+          0.25045045045045045,
+          0.24707207207207207,
+          0.25833333333333336
+        ],
+        "silent_decisions": 4440
+      }
+    },
+    {
+      "map_seed": 514,
+      "episodes": 100,
+      "random_policy": {
+        "success_rate": 0.01,
+        "successes": 1,
+        "episodes": 100,
+        "mean_reward": -0.5437000000000001,
+        "mean_steps": 43.13,
+        "action_counts": [
+          1066,
+          1081,
+          1141,
+          1025
+        ],
+        "action_frequencies": [
+          0.24715974959424994,
+          0.2506376072339439,
+          0.2645490377927197,
+          0.23765360537908647
+        ]
+      },
+      "saved_checkpoint": {
+        "success_rate": 0.0,
+        "successes": 0,
+        "episodes": 100,
+        "mean_reward": -0.5386,
+        "mean_steps": 43.57,
+        "action_counts": [
+          1028,
+          1097,
+          1114,
+          1118
+        ],
+        "action_frequencies": [
+          0.23594216203809962,
+          0.25177874684415885,
+          0.2556805141152169,
+          0.2565985770025247
+        ],
+        "silent_decisions": 4357
+      }
+    }
+  ]
+}

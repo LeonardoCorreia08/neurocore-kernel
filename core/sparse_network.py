@@ -54,11 +54,14 @@ class SparseSynapseNetwork(nn.Module):
         indices = torch.stack([idx_post, idx_pre]).long()
 
         values = torch.randn(target_connections) * weight_scale
+        # Keep initial weights within the same bounds used during learning.
+        values = torch.clamp(values, min=-1.0, max=1.0)
 
         self.sparse_weights = torch.sparse_coo_tensor(
             indices,
             values,
             size=(num_posts, num_pres),
+            check_invariants=True,
         ).coalesce()
 
     def get_dense_weights(self) -> torch.Tensor:
@@ -139,6 +142,7 @@ class SparseSynapseNetwork(nn.Module):
             updated_values,
             size=weights.size(),
             device=updated_values.device,
+            check_invariants=False,
         ).coalesce()
 
     def save_checkpoint(self, filepath: str):
@@ -182,6 +186,7 @@ class SparseSynapseNetwork(nn.Module):
             checkpoint["indices"],
             checkpoint["values"],
             size=checkpoint["size"],
+            check_invariants=True,
         ).coalesce()
 
         return instance

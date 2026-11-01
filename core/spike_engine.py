@@ -15,11 +15,12 @@ class SpikeEngine(nn.Module):
     def __init__(
         self,
         layer_sizes: list[int],
-        density: float = 0.2,
+        density: float = 0.3,
         device: str = None,
         enable_stdp: bool = True,
         enable_rstdp: bool = True,
         enable_homeostasis: bool = True,
+        weight_scale: float = 0.1,
     ):
         super().__init__()
 
@@ -52,7 +53,7 @@ class SpikeEngine(nn.Module):
         self.neurons = nn.ModuleList([
             LeakyIntegrateAndFire(
                 num_neurons=size,
-                threshold=1.0,
+                threshold=0.5,
             )
             for size in layer_sizes
         ]).to(self.device)
@@ -71,6 +72,7 @@ class SpikeEngine(nn.Module):
                     num_post,
                     num_pre,
                     density=density,
+                    weight_scale=weight_scale,
                 ).to(self.device)
             )
 
@@ -92,9 +94,18 @@ class SpikeEngine(nn.Module):
     def _get_indices(self, layer_idx: int) -> torch.Tensor:
         return self.synapses[layer_idx].sparse_weights.indices()
 
-    def forward(self, sensory_current: torch.Tensor) -> list[torch.Tensor]:
+    def forward(
+        self,
+        sensory_current: torch.Tensor,
+        teacher_action: int | None = None,
+    ) -> list[torch.Tensor]:
+        """Run one tick; teacher_action is used only for stored-experience replay."""
         if sensory_current.device != self.device:
             sensory_current = sensory_current.to(self.device)
+        if teacher_action is not None:
+            teacher_action = int(teacher_action)
+            if not 0 <= teacher_action < self.neurons[-1].num_neurons:
+                raise ValueError("teacher_action fora do intervalo da camada de saída")
 
         spikes = []
 
@@ -110,6 +121,11 @@ class SpikeEngine(nn.Module):
             current_post = self.synapses[i].forward_propagation(spk_pre)
             spk_post, _ = self.neurons[i + 1](current_post)
             spk_post = spk_post.view(-1)
+            if teacher_action is not None and i == self.num_layers - 2:
+                # Replay the historically selected action as a teaching spike.
+                spk_post = torch.zeros_like(spk_post)
+                spk_post[teacher_action] = 1.0
+                self.neurons[i + 1].apply_reset(spk_post)
             spikes.append(spk_post)
 
             indices = self._get_indices(i)
@@ -129,7 +145,13 @@ class SpikeEngine(nn.Module):
                     indices,
                 )
 
-            if self.enable_homeostasis:
+            # Teacher-forced replay injects a target spike by design; using
+            # that synthetic rate to adapt the output threshold would push
+            # it toward the homeostatic ceiling and silence recall.
+            is_teacher_forced_output = (
+                teacher_action is not None and i == self.num_layers - 2
+            )
+            if self.enable_homeostasis and not is_teacher_forced_output:
                 self.homeostasis_managers[i].apply_homeostasis(
                     spk_post,
                     self.neurons[i + 1],
@@ -137,10 +159,14 @@ class SpikeEngine(nn.Module):
 
         return spikes
 
-    def apply_global_reward(self, reward: float):
-        """Aplica recompensa aos rastros de elegibilidade existentes."""
+    def apply_global_reward(self, reward: float, target_action: int | None = None):
+        """Modulate eligibilities, optionally gating motor-layer updates to one action."""
         if not self.enable_rstdp:
             return
+        if target_action is not None:
+            target_action = int(target_action)
+            if not 0 <= target_action < self.neurons[-1].num_neurons:
+                raise ValueError("target_action fora do intervalo da camada de saída")
 
         for i in range(self.num_layers - 1):
             indices = self._get_indices(i)
@@ -149,6 +175,8 @@ class SpikeEngine(nn.Module):
                 reward,
                 indices,
             )
+            if target_action is not None and i == self.num_layers - 2:
+                deltas = deltas * (indices[0] == target_action).to(deltas.dtype)
 
             self.synapses[i].update_sparse_weights(deltas)
 

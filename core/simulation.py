@@ -1,67 +1,71 @@
 '''Modulo: core/simulation.py'''
+import random
+
 import torch
+
 from core.spike_engine import SpikeEngine
+
 
 class TemporalSimulator:
     def __init__(self, engine: SpikeEngine, time_steps: int = 20):
-        """
-        Gerencia a execução temporal da SNN. 
-        Mapeia a interação entre o Mundo (Estático) e o Cérebro (Temporal).
-        
-        Args:
-            engine: O motor central da rede (SpikeEngine).
-            time_steps: Quantos milissegundos (ticks) o cérebro tem para processar 
-                        cada estado do ambiente antes de tomar uma decisão.
-        """
+        """Executa ticks temporais e decodifica a atividade da camada motora."""
+        if time_steps <= 0:
+            raise ValueError("time_steps precisa ser positivo")
         self.engine = engine
-        self.time_steps = time_steps
+        self.time_steps = int(time_steps)
+        self.last_motor_spike_counts = torch.zeros(
+            self.engine.neurons[-1].num_neurons, device=self.engine.device
+        )
+        self.last_action_silent = False
 
-    def predict_action(self, sensory_array: list[float] | torch.Tensor) -> int:
+    def predict_action(
+        self,
+        sensory_array: list[float] | torch.Tensor,
+        epsilon: float = 0.0,
+    ) -> int:
+        """Escolhe ação epsilon-greedy; empates/silêncio usam desempate aleatório.
+
+        `epsilon=0` desliga exploração epsilon-greedy, mas empates continuam
+        aleatórios para impedir que uma saída totalmente silenciosa favoreça
+        sistematicamente o índice 0. Semeie o RNG Python para reprodução.
         """
-        Injeta os sensores na rede, simula a passagem do tempo e decide a ação 
-        baseada na "Rate Coding" (qual neurônio motor disparou mais).
-        """
-        # Converte a entrada do ambiente em Tensor de corrente
-        if not isinstance(sensory_array, torch.Tensor):
-            sensory_current = torch.tensor(sensory_array, dtype=torch.float32)
-        else:
+        if not 0.0 <= float(epsilon) <= 1.0:
+            raise ValueError("epsilon precisa estar no intervalo [0, 1]")
+
+        if isinstance(sensory_array, torch.Tensor):
             sensory_current = sensory_array.clone().detach().float()
+        else:
+            sensory_current = torch.tensor(sensory_array, dtype=torch.float32)
+        sensory_current = sensory_current.to(self.engine.device)
 
-        # Descobre quantos neurônios motores existem na última camada
         num_motor_neurons = self.engine.neurons[-1].num_neurons
-        
-        # Inicia um acumulador de "votos" para os neurônios motores
-        motor_spike_counts = torch.zeros(num_motor_neurons, device=sensory_current.device)
-
-        # ---------------------------------------------------------
-        # LOOP TEMPORAL DA SNN
-        # ---------------------------------------------------------
-        for tick in range(self.time_steps):
-            # O motor processa 1 tick completo (inclui homeostase e aprendizagem contínua)
+        motor_spike_counts = torch.zeros(
+            num_motor_neurons,
+            device=self.engine.device,
+            dtype=sensory_current.dtype,
+        )
+        for _ in range(self.time_steps):
             all_layer_spikes = self.engine(sensory_current)
-            
-            # Captura a atividade da última camada (Motora)
-            motor_spikes = all_layer_spikes[-1]
-            motor_spike_counts += motor_spikes
+            motor_spike_counts += all_layer_spikes[-1].view(-1)
 
-        # ---------------------------------------------------------
-        # DECISÃO DE AÇÃO
-        # ---------------------------------------------------------
-        # Se nenhum neurônio disparou, a ação 0 é escolhida por padrão. 
-        # (A Homeostase garantirá que eles fiquem mais sensíveis no futuro caso isto aconteça muito)
-        action_id = torch.argmax(motor_spike_counts).item()
-        
-        return action_id
+        self.last_motor_spike_counts = motor_spike_counts.detach().clone()
+        self.last_action_silent = bool(motor_spike_counts.sum().item() == 0.0)
 
-    def process_feedback(self, reward: float):
-        """
-        Recebe a avaliação do ambiente e injeta no Cérebro (Dopamina).
-        """
-        self.engine.apply_global_reward(reward)
+        if random.random() < float(epsilon):
+            return random.randrange(num_motor_neurons)
+
+        max_count = motor_spike_counts.max()
+        tied_actions = torch.nonzero(
+            motor_spike_counts == max_count, as_tuple=False
+        ).view(-1).detach().cpu().tolist()
+        return int(random.choice(tied_actions))
+
+    def process_feedback(self, reward: float, action: int | None = None):
+        """Recebe o modulador de recompensa e o encaminha ao motor."""
+        self.engine.apply_global_reward(float(reward), target_action=action)
 
     def reset_for_new_episode(self):
-        """
-        Limpa todos os estados elétricos e traços temporais para iniciar 
-        uma nova vida/episódio no ambiente virtual.
-        """
+        """Zera membranas e rastros, preservando pesos e configuração aprendidos."""
         self.engine.reset_all_states()
+        self.last_motor_spike_counts.zero_()
+        self.last_action_silent = False
