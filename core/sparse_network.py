@@ -55,3 +55,26 @@ class SparseSynapseNetwork:
         self.sparse_weights = torch.sparse_coo_tensor(
             self.sparse_weights.indices(), current_values, size=self.sparse_weights.size()
         ).coalesce()
+    def save_checkpoint(self, filepath: str):
+        """Salva os indices e valores da rede esparsa em disco."""
+        torch.save({
+            'indices': self.sparse_weights.indices(),
+            'values': self.sparse_weights.values(),
+            'size': self.sparse_weights.size()
+        }, filepath)
+        print(f"Checkpoint de sinapses esparsas salvo em '{filepath}'!")
+
+    @classmethod
+    def load_checkpoint(cls, filepath: str, density: float = 0.15):
+        """Carrega uma rede esparsa salva anteriormente a partir de um checkpoint."""
+        checkpoint = torch.load(filepath)
+        instance = cls.__new__(cls)
+        instance.num_posts = checkpoint['size'][0]
+        instance.num_pres = checkpoint['size'][1]
+        instance.density = density
+        instance.sparse_weights = torch.sparse_coo_tensor(
+            checkpoint['indices'], checkpoint['values'], size=checkpoint['size']
+        ).coalesce()
+        print(f"Checkpoint carregado com sucesso de '{filepath}'!")
+        return instance
+    
