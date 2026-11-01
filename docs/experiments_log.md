@@ -1,111 +1,365 @@
-﻿# NeuroCore 0.1 — Relatório de Execução
+﻿# Registros de experimentos do NEUROCORE
 
-![NeuroCore 0.1 Execution](./NeuroCore0.1.png)
+## 1. Escopo
 
-Nesta execução, a plataforma uniu simulação de neurônios biológicos e um ambiente virtual de testes. Veja detalhadamente o que aconteceu nos bastidores:
+Este documento consolida os registros de terminal fornecidos para o NEUROCORE.
 
----
+Os resultados abaixo são transcrições resumidas dos logs. Este documento não acrescenta resultados que não aparecem nesses registros.
 
-## 1. O Ciclo de Execução do Experimento
-O script rodou **50 episódios** de testes ininterruptos. Em cada episódio:
+O log não informa a data de cada execução, o modelo de CPU, a GPU, a memória disponível, a versão do Python ou a versão do PyTorch. Registre esses dados nas próximas execuções.
 
-* **Reinicialização do Ambiente:** O `VirtualWorld2D` foi reiniciado, colocando um agente em uma posição aleatória na arena 2D, com um alvo (meta) espalhado em outro local.
-* **Limite de Passos:** O agente teve um limite de **200 passos** por episódio para tentar navegar pelo mapa.
+## 2. Resumo dos resultados
 
----
+| Teste | Resultado | Estado observado |
+|---|---|---|
+| `test_05_scale_10k` | 10 mil neurônios; 50 passos; 17,4204 s | Concluído |
+| `test_06_neurocore_03_agent` | 1 meta em 10 episódios | Concluído após uma falha anterior |
+| `neurocore_04_test` | 5 episódios; checkpoint salvo | Concluído |
+| `test_08_cortical_modules` | 181 metas acumuladas em 50 episódios | Concluído |
+| `test_09_memory_modules` | checkpoint, associação e poda | Testes concluídos; associação requer revisão |
+| `test_10_perception_modules` | codificadores de sensor, visão e áudio | Concluído |
+| `test_11_monitoring` | frequência, desvio, energia estimada e taxa de acerto | Concluído após correções |
+| `test_12_scale_100k` | 100 mil neurônios; ciclo de 174,40 ms | Concluído |
+| `test_13_scale_1m` | 1 milhão de neurônios; ciclo de 2.394,65 ms | Concluído |
+| `test_14_generate_plots` | três gráficos salvos | Concluído |
 
-## 2. O Fluxo de Processamento Neural (SNN)
-A cada passo de tempo dentro do episódio, o sistema executou um pipeline neuromórfico baseado em eventos:
+## 3. Teste de escala: 10 mil neurônios
 
-1. **Percepção Sensorial:** O ambiente mediu a distância do agente para o alvo e para as paredes, gerando um vetor de **4 entradas**.
-2. **Camada Sensorial (`sensory_layer`):** 4 neurônios do tipo **LIF** (*Leaky Integrate-and-Fire*) receberam os dados e os converteram em impulsos elétricos (*spikes*).
-3. **Camada Oculta (`hidden_layer`):** 16 neurônios intermediários processaram os sinais via matriz de pesos sinápticos aleatórios ($W_1$).
-4. **Camada Motora (`motor_layer`):** 4 neurônios de saída interpretaram a atividade e dispararam comandos de movimentação (Cima, Baixo, Esquerda ou Direita) com base no potencial de membrana acumulado (`argmax`).
+**Comando:**
 
----
+```bash
+python -m experiments.test_05_scale_10k
+```
 
-## 3. Análise dos Resultados no Log
-Observando a saída do terminal, é possível notar o comportamento do sistema:
+**Configuração registrada:**
 
-* **Do Episódio 1 ao 20:** O contador de metas acumuladas permaneceu em `0`. O agente estava explorando a arena às cegas, já que os pesos sinápticos iniciais eram totalmente aleatórios e ainda não havia uma regra de aprendizado ativa (como o STDP) ajustando as sinapses.
-* **No Episódio 21:** A primeira meta foi alcançada (*Metas Atingidas Acumuladas: 1*) por puro acaso durante a movimentação aleatória do agente.
-* **Nos Episódios 33, 42, etc.:** Novas metas foram atingidas esporadicamente à medida que o agente cruzava com os alvos no mapa.
+- População: 10.000 neurônios.
+- Densidade esparsa: 15%.
+- Simulação: 50 passos.
 
+**Resultados:**
 
-![NeuroCore 0.1 Execution](./NeuroCore0.1stdp.png)
+- Construção da rede: 5,45 s.
+- Tempo total de simulação: 17,4204 s.
+- Média de pulsos por passo: 4.577,72.
 
-## O que a análise técnica nos diz?
+Valores registrados em passos selecionados:
 
-Na neurociência computacional e em SNNs (*Spiking Neural Networks*), existe um desafio clássico: **a STDP (*Spike-Timing-Dependent Plasticity*) pura é não-supervisionada.**
+| Passo | Spikes |
+|---:|---:|
+| 10 | 4.656 |
+| 20 | 4.560 |
+| 30 | 4.658 |
+| 40 | 4.532 |
+| 50 | 4.642 |
 
-* Ela apenas ajusta as sinapses com base na proximidade temporal dos disparos (qual neurônio disparou antes de qual).
-* Ela não sabe se a ação tomada resultou em uma recompensa (chegar ao alvo) ou em algo irrelevante. 
+**Estado:** o teste terminou com sucesso.
 
-Sem um sinal de dopamina ou modulação por recompensa, a rede corre o risco de fortalecer conexões aleatórias que coincidiram temporalmente, mas que **não são úteis** para a tarefa de navegação.
+**Aviso:** o PyTorch informou que as verificações de invariantes dos tensores esparsos estavam desativadas. O aviso cita risco de erros de memória se um tensor esparso violar os invariantes.
 
+## 4. Agente NeuroCore 0.3: 10 mil neurônios e R-STDP
 
-![NeuroCore 0.1 Execution](./NeuroCore0.1R-STDP.png)
+**Comando:**
 
-## Análise de Desempenho: O Impacto do R-STDP
+```bash
+python -m experiments.test_06_neurocore_03_agent
+```
 
-Analisando os dados da execução, é possível ver uma mudança de comportamento impressionante que prova que a introdução do **R-STDP (modulado por recompensa)** foi bem-sucedida.
+### 4.1 Primeira execução
 
-### O que o log revela de forma clara:
-* **A fase de exploração cega (Episódios 1 a 4):** O agente ficava patinando por 200 passos inteiros sem achar nada, porque as conexões sinápticas ainda eram puramente aleatórias.
-* **O primeiro aprendizado real (Episódio 5):** O agente encontrou a meta em apenas **7 passos**!
-* **Casos de acerto relâmpago (Episódios 18, 29, 37):** O agente resolveu o desafio em **1 único passo** (`Passos: 1`). Isso acontece quando o reinício aleatório da arena coloca a meta próxima e a rede neural já possui caminhos sinápticos fortalecidos que direcionam a ação correta imediatamente.
-* **Evolução de metas:** O total de metas acumuladas saltou de **0 para 6**, com episódios de alta eficiência pontuando no meio do caminho.
+O agente iniciou com 10 mil neurônios e duas matrizes esparsas:
 
----
+- W1: sensorial para oculta;
+- W2: oculta para motora.
 
-### Por que isso é uma grande vitória para o projeto?
+O teste parou no episódio 3. A atualização de pesos gerou um erro de dimensão:
 
-Com a STDP pura anterior, o agente apenas acumulava disparos aleatórios sem direção clara. Com o **R-STDP**, o sinal de dopamina simulada (recompensa) atuou como o *"juiz"*, enviando a instrução fundamental para a rede: 
+```text
+The size of tensor a (5586) must match the size of tensor b (4)
+at non-singleton dimension 1
+```
 
-> *"As sinapses que dispararam nos últimos milissegundos antes da recompensa fizeram a coisa certa; vamos consolidá-las."*
+O erro ocorreu durante a soma entre os valores dos pesos esparsos e os valores de atualização.
 
+### 4.2 Segunda execução
 
+| Episódio | Passos | Metas atingidas acumuladas |
+|---:|---:|---:|
+| 1 | 100 | 0 |
+| 2 | 100 | 0 |
+| 3 | 100 | 0 |
+| 4 | 100 | 0 |
+| 5 | 32 | 1 |
+| 6 | 100 | 1 |
+| 7 | 100 | 1 |
+| 8 | 100 | 1 |
+| 9 | 100 | 1 |
+| 10 | 100 | 1 |
 
-# Análise de Telemetria: Raster Plot 
+**Estado:** a segunda execução terminou. O log não descreve a alteração que resolveu o erro da primeira execução.
 
-![Raster Plot da SNN](./spike_raster.png)
+**Interpretação permitida:** o agente atingiu uma meta durante a execução registrada. O resultado não demonstra convergência ou generalização.
 
-Este novo **Raster Plot  demonstra perfeitamente a transição para uma rede neural pulsante (SNN) biologicamente ativa e funcional. 
+## 5. NeuroCore 0.4: atenção, obstáculos e persistência
 
-Analisando a telemetria visual gerada:
+**Comando:**
 
-* **Atividade Contínua e Dinâmica:** Ao contrário dos gráficos anteriores que estavam quase vazios, agora existem disparos distribuídos por toda a linha do tempo (ao longo dos 200 passos de simulação).
-* **Padrões Rítmicos Estáveis:** Os neurônios com os IDs **5, 8, 11 e 14** apresentam um padrão de disparo regular e constante, o que indica que a combinação de pesos ajustados por **R-STDP** e a memória de curto prazo estabilizaram a rede.
-* **Esparsidade Eficiente:** A rede não dispara em massa de forma caótica; apenas neurônios específicos respondem aos estímulos contextuais, mantendo a característica de **baixo consumo energético** essencial para a computação neuromórfica.
+```bash
+python -m experiments.neurocore_04_test
+```
 
+**Resultados:**
 
-# Relatório Técnico: NeuroCore 0.3 - Escalabilidade para 10.000 Neurônios
+| Episódio | Passos |
+|---:|---:|
+| 1 | 80 |
+| 2 | 80 |
+| 3 | 16 |
+| 4 | 80 |
+| 5 | 80 |
 
-![NeuroCore 0.3 Execution](./NeuroCore10k.png)
+O teste salvou um checkpoint sináptico em:
 
-## 1. Visão Geral do Marco
-O NeuroCore 0.3 marca a transição bem-sucedida de redes densas de pequeno porte (1k neurônios) para uma arquitetura de grande escala suportando **10.000 neurônios** e **15 milhões de sinapses ativas**, mantendo a eficiência computacional e evitando gargalos de memória.
+```text
+config/synapse_w1_checkpoint.pt
+```
 
-## 2. Estratégia de Engenharia Aplicada
-* **Conectividade Esparsa (Sparse Tensors):** Implementação de matrizes esparsas baseadas em grafos probabilísticos (*Erdős-Rényi* com densidade de 15%). Isso reduziu o consumo teórico de 100 milhões de sinapses densas para apenas 15 milhões de conexões locais ativas.
-* **Configuração Centralizada:** Todos os hiperparâmetros globais foram migrados para o arquivo `config/brain_config.yaml`, permitindo ajustes dinâmicos de escala sem refatoração de código.
-* **Otimização de Desempenho:** O ciclo de simulação de 50 passos de tempo para 10.000 neurônios executou estavelmente com média de ~4.577 *spikes* por passo, garantindo atividade dinâmica sem saturação da rede.
+**Estado:** o teste terminou com sucesso, conforme o log.
 
-## 3. Métricas de Execução (Benchmark Local)
-* **Tempo de Construção da Rede Esparsa:** 5.45 segundos
-* **Tempo Total de Simulação (50 passos):** 17.42 segundos
-* **Taxa Média de Disparos:** 4,577.72 spikes/passo
+**Limite:** o registro não apresenta uma métrica isolada para atenção cognitiva.
 
+## 6. Teste de módulos corticais
 
-![NeuroCore 0.3 Execution](./NeuroCore10k2D.png)
+**Comando:**
 
-# Análise de Log: NeuroCore 0.3 (Escala de 10k Neurônios)
+```bash
+python -m experiments.test_08_cortical_modules
+```
 
-O log do terminal confirma que o erro foi resolvido e que o **NeuroCore 0.3** rodou do início ao fim sem interrupções.
+O teste executou 50 episódios, com até 200 passos por episódio.
 
-## O que o resultado nos mostra:
+O log registrou os seguintes valores acumulados:
 
-* **Estabilidade em Grande Escala:** Os 10.000 neurônios processaram os 10 episódios inteiros utilizando as matrizes de sinapses esparsas e o mecanismo de R-STDP sem falhas de memória ou travamentos.
-* **Aprendizado Comprovado:** No **Episódio 5**, o agente encontrou a meta em 32 passos, registrando a primeira meta atingida (`Metas Atingidas: 1`) em escala real de 10k neurônios.
+| Episódio | Metas acumuladas |
+|---:|---:|
+| 1–6 | 0 |
+| 7–12 | 2 |
+| 13–24 | 4 |
+| 25–42 | 173 |
+| 43–50 | 181 |
 
-> **Conclusão:** construi e validei com sucesso uma arquitetura neuromórfica autônoma baseada em *Spiking Neural Networks* (SNNs) escalável, eficiente e funcional.
+**Estado:** o teste terminou com sucesso.
+
+**Limite:** o log informa metas acumuladas. Ele não informa a taxa por episódio, a quantidade de tentativas, a distribuição dos mapas ou uma comparação com uma política de referência.
+
+## 7. Testes de memória
+
+**Comando:**
+
+```bash
+python -m experiments.test_09_memory_modules
+```
+
+O primeiro registro dessa execução mostra 50 episódios e 19 metas acumuladas. Em seguida, o log mostra uma execução específica dos subsistemas de memória.
+
+### 7.1 Persistência de longo prazo
+
+O sistema salvou e carregou:
+
+```text
+memory/storage/neurocore_snapshot_test.pt
+```
+
+O estado carregado incluiu:
+
+```text
+weights_sample: [0.5, -0.2, 0.8]
+epoch: 10
+```
+
+**Resultado:** o log confirma a gravação e a leitura do checkpoint de teste.
+
+### 7.2 Memória associativa
+
+O teste registrou:
+
+```text
+[Associative Test] Padrao recuperado a partir de A:
+tensor([0., 0., 0., 0.])
+```
+
+**Resultado:** houve uma saída do módulo. O vetor zerado não confirma a recuperação correta do padrão esperado.
+
+**Ação necessária:** definir o padrão de entrada, o padrão esperado e um critério de igualdade ou similaridade. Depois, repetir o teste.
+
+### 7.3 Consolidação e poda
+
+O teste registrou:
+
+- 330 sinapses fracas removidas;
+- 1.467 sinapses ativas restantes.
+
+**Estado:** a poda foi executada com sucesso, conforme o log.
+
+## 8. Teste de percepção
+
+**Comando:**
+
+```bash
+python -m experiments.test_10_perception_modules
+```
+
+Saídas registradas:
+
+| Componente | Saída |
+|---|---|
+| Sensor Encoder | `[0., 1., 0., 0.]` |
+| Vision Encoder | vetor de dimensão 8 |
+| Audio Encoder | `[0., 1., 1., 1.]` |
+| Neural Integration | pulsos propagados em camada LIF |
+
+O potencial de membrana resultante foi:
+
+```text
+[0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.5]
+```
+
+**Estado:** o teste terminou com sucesso.
+
+**Limite:** o teste demonstra a execução dos codificadores com os valores usados. Não demonstra precisão em bases reais de áudio ou imagem.
+
+## 9. Teste de monitoramento
+
+**Comando:**
+
+```bash
+python -m experiments.test_11_monitoring
+```
+
+### 9.1 Primeira tentativa
+
+O teste parou por um erro de sintaxe em `monitoring/spike_visualizer.py`.
+
+### 9.2 Segunda tentativa
+
+O teste parou porque não foi possível importar `SpikeVisualizer`.
+
+### 9.3 Terceira tentativa
+
+O teste terminou e registrou:
+
+| Métrica | Valor |
+|---|---:|
+| Histórico de spikes | 50 passos |
+| Desvio homeostático | 4,62 |
+| Custo energético estimado | 0,00000047 J |
+| Taxa de acerto | 80% |
+
+**Estado:** concluído após correções.
+
+**Limite:** o log não descreve a fórmula usada para estimar energia nem o protocolo usado para calcular a taxa de acerto.
+
+## 10. Teste de escala: 100 mil neurônios
+
+**Comando:**
+
+```bash
+python -m experiments.test_12_scale_100k
+```
+
+**Configuração registrada:**
+
+- População: 100.000 neurônios.
+- Densidade: 5%.
+
+**Resultados:**
+
+| Métrica | Valor |
+|---|---:|
+| Tempo de alocação e coalescência | 1,92 s |
+| Tempo do ciclo de teste | 174,40 ms |
+| Spikes ativos | 26.094 |
+| Operações sinápticas (SOPs) | 5.781.512 |
+| Custo energético estimado | 0,00003188 J |
+
+**Estado:** o teste terminou com sucesso.
+
+## 11. Teste de escala: 1 milhão de neurônios
+
+**Comando:**
+
+```bash
+python -m experiments.test_13_scale_1m
+```
+
+**Configuração registrada:**
+
+- População: 1.000.000 neurônios.
+- Densidade: 1%.
+
+**Resultados:**
+
+| Métrica | Valor |
+|---|---:|
+| Tempo de alocação e coalescência | 29,25 s |
+| Tempo do ciclo de teste | 2.394,65 ms |
+| Spikes ativos | 166.992 |
+| Operações sinápticas (SOPs) | 69.163.386 |
+| Custo energético estimado | 0,00023616 J |
+
+**Estado:** o teste terminou com sucesso.
+
+**Interpretação:** o log demonstra que a rede foi alocada e que um ciclo de teste foi executado nessa escala. Não demonstra aprendizagem, retenção ou generalização com um milhão de neurônios.
+
+## 12. Geração de gráficos
+
+**Comando:**
+
+```bash
+python -m experiments.test_14_generate_plots
+```
+
+O teste registrou a criação de:
+
+```text
+experiments/plots/neurocore_learning_curve.png
+experiments/plots/neurocore_raster_plot.png
+experiments/plots/neurocore_energy_profile.png
+```
+
+**Estado:** os três arquivos foram gerados, conforme o log.
+
+## 13. Problemas técnicos observados
+
+| Problema | Evidência | Ação recomendada |
+|---|---|---|
+| Invariantes esparsos desativados | Aviso do PyTorch em diferentes testes | Validar índices e valores. Avaliar a ativação das verificações durante os testes. |
+| Dimensões incompatíveis na R-STDP | Erro entre 5.586 e 4 elementos | Verificar alinhamento entre índices esparsos e deltas de peso. |
+| Erro de sintaxe no visualizador | `SyntaxError` | Manter teste de importação e lint. |
+| Falha de importação | `SpikeVisualizer` não encontrado | Conferir nome da classe e módulo. |
+| Recuperação associativa zerada | Vetor `[0, 0, 0, 0]` | Criar teste com padrão conhecido e resultado esperado. |
+
+## 14. Protocolo recomendado para os próximos experimentos
+
+Registre estes dados em cada execução:
+
+1. Identificador e versão do experimento.
+2. Data e hora.
+3. Commit do código.
+4. Sistema operacional.
+5. CPU, GPU e memória.
+6. Versões de Python, PyTorch e CUDA.
+7. Semente aleatória.
+8. Número de neurônios e sinapses.
+9. Densidade e topologia da rede.
+10. Número de passos e episódios.
+11. Métrica, unidade e método de cálculo.
+12. Resultado bruto e estado final.
+
+Repita cada experimento com mais de uma semente. Informe média e desvio-padrão. Use a mesma carga de trabalho quando comparar escalas.
+
+## 15. Nota sobre energia
+
+Os logs apresentam valores em joules. O material fornecido não mostra o método de medição ou a fórmula de estimativa.
+
+Até que o método seja documentado e validado, descreva esses números como **estimativas produzidas pelo módulo de avaliação**. Não os apresente como medições físicas de consumo da CPU ou GPU.
