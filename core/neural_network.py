@@ -1,1 +1,1 @@
-'''Módulo: neural_network.py'''
+'''Mï¿½dulo: neural_network.py'''

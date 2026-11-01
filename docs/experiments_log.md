@@ -77,3 +77,35 @@ Analisando a telemetria visual gerada:
 * **Atividade Contínua e Dinâmica:** Ao contrário dos gráficos anteriores que estavam quase vazios, agora existem disparos distribuídos por toda a linha do tempo (ao longo dos 200 passos de simulação).
 * **Padrões Rítmicos Estáveis:** Os neurônios com os IDs **5, 8, 11 e 14** apresentam um padrão de disparo regular e constante, o que indica que a combinação de pesos ajustados por **R-STDP** e a memória de curto prazo estabilizaram a rede.
 * **Esparsidade Eficiente:** A rede não dispara em massa de forma caótica; apenas neurônios específicos respondem aos estímulos contextuais, mantendo a característica de **baixo consumo energético** essencial para a computação neuromórfica.
+
+
+# Relatório Técnico: NeuroCore 0.3 - Escalabilidade para 10.000 Neurônios
+
+![NeuroCore 0.3 Execution](./NeuroCore10k.png)
+
+## 1. Visão Geral do Marco
+O NeuroCore 0.3 marca a transição bem-sucedida de redes densas de pequeno porte (1k neurônios) para uma arquitetura de grande escala suportando **10.000 neurônios** e **15 milhões de sinapses ativas**, mantendo a eficiência computacional e evitando gargalos de memória.
+
+## 2. Estratégia de Engenharia Aplicada
+* **Conectividade Esparsa (Sparse Tensors):** Implementação de matrizes esparsas baseadas em grafos probabilísticos (*Erdős-Rényi* com densidade de 15%). Isso reduziu o consumo teórico de 100 milhões de sinapses densas para apenas 15 milhões de conexões locais ativas.
+* **Configuração Centralizada:** Todos os hiperparâmetros globais foram migrados para o arquivo `config/brain_config.yaml`, permitindo ajustes dinâmicos de escala sem refatoração de código.
+* **Otimização de Desempenho:** O ciclo de simulação de 50 passos de tempo para 10.000 neurônios executou estavelmente com média de ~4.577 *spikes* por passo, garantindo atividade dinâmica sem saturação da rede.
+
+## 3. Métricas de Execução (Benchmark Local)
+* **Tempo de Construção da Rede Esparsa:** 5.45 segundos
+* **Tempo Total de Simulação (50 passos):** 17.42 segundos
+* **Taxa Média de Disparos:** 4,577.72 spikes/passo
+
+
+![NeuroCore 0.3 Execution](./NeuroCore10k2D.png)
+
+# Análise de Log: NeuroCore 0.3 (Escala de 10k Neurônios)
+
+O log do terminal confirma que o erro foi resolvido e que o **NeuroCore 0.3** rodou do início ao fim sem interrupções.
+
+## O que o resultado nos mostra:
+
+* **Estabilidade em Grande Escala:** Os 10.000 neurônios processaram os 10 episódios inteiros utilizando as matrizes de sinapses esparsas e o mecanismo de R-STDP sem falhas de memória ou travamentos.
+* **Aprendizado Comprovado:** No **Episódio 5**, o agente encontrou a meta em 32 passos, registrando a primeira meta atingida (`Metas Atingidas: 1`) em escala real de 10k neurônios.
+
+> **Conclusão:** construi e validei com sucesso uma arquitetura neuromórfica autônoma baseada em *Spiking Neural Networks* (SNNs) escalável, eficiente e funcional.

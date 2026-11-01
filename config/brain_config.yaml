@@ -1,0 +1,32 @@
+# Configuração Global do NeuroCore
+project: "neurocore-kernel"
+version: "0.3-alpha"
+
+# Configuração de Escala da Rede
+scale:
+  target_neurons: 10000  # Alternar entre 1000 e 10000 conforme necessário
+  connectivity_density: 0.15 # 15% de esparsidade (conexões locais)
+
+# Hiperparâmetros do Módulo 1 (Neural Engine - LIF)
+neuron:
+  threshold: 0.5
+  beta: 0.9              # Fator de decaimento do potencial de membrana (tau_m)
+  rest_potential: 0.0
+
+# Hiperparâmetros do Módulo 3 (Learning Engine - R-STDP)
+learning:
+  lr: 0.01
+  tau_trace: 20.0
+  tau_eligibility: 50.0
+  a_plus: 1.0
+  a_minus: -1.0
+
+# Hiperparâmetros da Memória de Curto Prazo (Memory Engine)
+memory:
+  history_steps: 5
+
+# Configuração do Ambiente Virtual (Arena 2D)
+environment:
+  width: 100
+  height: 100
+  max_steps_per_episode: 200
