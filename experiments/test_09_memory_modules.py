@@ -21,9 +21,14 @@ def run_memory_modules_test():
     pattern_a = torch.tensor([1.0, 0.0, 1.0, 0.0])
     pattern_b = torch.tensor([0.0, 1.0, 0.0, 1.0])
     
+    # Grava e recupera
     assoc_net.encode_association(pattern_a, pattern_b)
     recalled_pattern = assoc_net.recall(pattern_a)
     print(f"[Associative Test] Padrao recuperado a partir de A: {recalled_pattern}")
+    
+    # VALIDAÇÃO RIGOROSA: Garante que o teste falha se a memória corromper
+    assert torch.equal(recalled_pattern, pattern_b), f"FALHA! Esperado {pattern_b}, mas obteve {recalled_pattern}"
+    print("[Associative Test] Associação de padrões validada com sucesso.")
     
     # 3. Testar Motor de Consolidação e Esquecimento Ativo
     print("[Consolidation Test] Criando matriz esparsa para teste de poda...")

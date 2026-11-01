@@ -1,365 +1,390 @@
-﻿# Registros de experimentos do NEUROCORE
+﻿# NEUROCORE — Registro de Experimentos
 
-## 1. Escopo
+Este documento consolida os resultados impressos nos registros de execução fornecidos para os experimentos do NEUROCORE. Os valores são transcritos dos logs disponíveis; não representam medições independentes nem garantem que os testes sejam reproduzíveis em outro ambiente.
 
-Este documento consolida os registros de terminal fornecidos para o NEUROCORE.
+## 1. Resumo dos experimentos
 
-Os resultados abaixo são transcrições resumidas dos logs. Este documento não acrescenta resultados que não aparecem nesses registros.
-
-O log não informa a data de cada execução, o modelo de CPU, a GPU, a memória disponível, a versão do Python ou a versão do PyTorch. Registre esses dados nas próximas execuções.
-
-## 2. Resumo dos resultados
-
-| Teste | Resultado | Estado observado |
+| Experimento | Objetivo declarado | Resultado registrado |
 |---|---|---|
-| `test_05_scale_10k` | 10 mil neurônios; 50 passos; 17,4204 s | Concluído |
-| `test_06_neurocore_03_agent` | 1 meta em 10 episódios | Concluído após uma falha anterior |
-| `neurocore_04_test` | 5 episódios; checkpoint salvo | Concluído |
-| `test_08_cortical_modules` | 181 metas acumuladas em 50 episódios | Concluído |
-| `test_09_memory_modules` | checkpoint, associação e poda | Testes concluídos; associação requer revisão |
-| `test_10_perception_modules` | codificadores de sensor, visão e áudio | Concluído |
-| `test_11_monitoring` | frequência, desvio, energia estimada e taxa de acerto | Concluído após correções |
-| `test_12_scale_100k` | 100 mil neurônios; ciclo de 174,40 ms | Concluído |
-| `test_13_scale_1m` | 1 milhão de neurônios; ciclo de 2.394,65 ms | Concluído |
-| `test_14_generate_plots` | três gráficos salvos | Concluído |
+| `test_01_lif_base` | Testar o agente neural base (NeuroCore 0.1). | 50 episódios de 200 passos; 6 metas atingidas acumuladas. |
+| `test_02_stdp` | Testar o aprendizado STDP. | 50 episódios de 200 passos; 6 metas atingidas. |
+| `test_03_rstdp` | Testar o aprendizado R-STDP modulado por recompensa. | 50 episódios; 5 metas atingidas. Alguns episódios terminaram antes de 200 passos. |
+| `test_04_neurocore_02` | Testar NeuroCore 0.2 com Memory Engine e Raster Plot. | 30 episódios; 1 meta atingida; raster plot salvo. |
+| `test_05_scale_10k` | Avaliar uma rede esparsa com 10.000 neurônios. | Construção da rede em 5,16 s; simulação de 50 passos em 17,5334 s. |
+| `test_06_neurocore_03_agent` | Testar agente NeuroCore 0.3 com 10.000 neurônios e R-STDP. | 10 episódios; 1 meta atingida. |
+| `test_07_neurocore` | Testar NeuroCore 0.4 com atenção, obstáculos e persistência. | 5 episódios de 80 passos; checkpoint sináptico salvo. |
+| `test_08_cortical_modules` | Integrar subsistemas corticais. | Ciclo de 20 passos concluído; nenhuma recompensa positiva ou estado final foi registrado nos passos exibidos. |
+| `test_09_memory_modules` | Testar persistência, recuperação associativa e poda. | Snapshot salvo e carregado; padrão `[0., 1., 0., 1.]` recuperado; 380 sinapses podadas e 1.416 ativas restantes. |
+| `test_10_perception_modules` | Testar codificadores sensorial, visual e auditivo. | Os codificadores produziram os vetores de pulsos registrados no log. |
+| `test_11_monitoring` | Testar avaliação e telemetria. | 50 passos registrados; desvio homeostático 5,82; custo energético estimado de 0,00000047 J; taxa de acerto de 80%. |
+| `test_12_scale_100k` | Testar alocação e ciclo com 100.000 neurônios. | Alocação em 2,02 s; ciclo em 197,90 ms; 24.341 spikes ativos. |
+| `test_13_scale_1m` | Testar alocação e ciclo com 1.000.000 de neurônios. | Alocação em 29,87 s; ciclo em 2.376,34 ms; 174.005 spikes ativos. |
+| `test_14_generate_plots` | Gerar gráficos dos experimentos. | Três arquivos de gráfico foram salvos. |
+| `test_15_generalization` | Testar adaptação no Ambiente A e transferência para o Ambiente B. | Eficiência de 70% no Ambiente A e taxa de sucesso registrada de 100% no Ambiente B. |
+| `test_16_dynamic_1m` | Testar simulação dinâmica com 1.000.000 de neurônios. | O cabeçalho anuncia 1.000 passos, mas o log registra 50 passos; tempo total de 50,28 s. |
 
-## 3. Teste de escala: 10 mil neurônios
+## 2. Experimentos de aprendizado
 
-**Comando:**
+### 2.1 NeuroCore 0.1 — modelo base
 
-```bash
-python -m experiments.test_05_scale_10k
+**Comando**
+
+```powershell
+python -m experiments.test_01_lif_base
 ```
 
-**Configuração registrada:**
+**Registros**
 
-- População: 10.000 neurônios.
-- Densidade esparsa: 15%.
-- Simulação: 50 passos.
+- Episódios executados: 50.
+- Passos informados por episódio: 200.
+- Metas atingidas acumuladas ao final: 6.
+- O log informa que o experimento foi concluído com sucesso.
 
-**Resultados:**
+O resultado corresponde à contagem de metas impressa pelo teste. O log, isoladamente, não define a dificuldade das metas nem demonstra generalização para outros ambientes.
 
-- Construção da rede: 5,45 s.
-- Tempo total de simulação: 17,4204 s.
-- Média de pulsos por passo: 4.577,72.
+### 2.2 NeuroCore 0.1 — STDP
 
-Valores registrados em passos selecionados:
+**Comando**
 
-| Passo | Spikes |
-|---:|---:|
-| 10 | 4.656 |
-| 20 | 4.560 |
-| 30 | 4.658 |
-| 40 | 4.532 |
-| 50 | 4.642 |
+```powershell
+python -m experiments.test_02_stdp
+```
 
-**Estado:** o teste terminou com sucesso.
+**Registros**
 
-**Aviso:** o PyTorch informou que as verificações de invariantes dos tensores esparsos estavam desativadas. O aviso cita risco de erros de memória se um tensor esparso violar os invariantes.
+- Episódios executados: 50.
+- Passos informados por episódio: 200.
+- Metas atingidas ao final: 6.
+- O log informa que o experimento com STDP foi concluído com sucesso.
 
-## 4. Agente NeuroCore 0.3: 10 mil neurônios e R-STDP
+Não há, nesse registro, uma comparação controlada que isole o efeito do STDP em relação ao experimento base.
 
-**Comando:**
+### 2.3 NeuroCore 0.1 — R-STDP
 
-```bash
+**Comando**
+
+```powershell
+python -m experiments.test_03_rstdp
+```
+
+**Registros**
+
+- Episódios executados: 50.
+- Metas atingidas ao final: 5.
+- Alguns episódios terminaram antes de 200 passos; o log apresenta, por exemplo, episódios com 8, 3, 10, 2, 24, 17, 5, 1, 13, 7 e 12 passos.
+- O log informa que o experimento foi concluído com sucesso.
+
+A contagem de metas não deve ser comparada diretamente com os outros testes sem confirmar se ambiente, sementes, condições iniciais e critérios de encerramento eram equivalentes.
+
+### 2.4 NeuroCore 0.2 — memória e raster plot
+
+**Comando**
+
+```powershell
+python -m experiments.test_04_neurocore_02
+```
+
+**Registros**
+
+- Episódios executados: 30.
+- Passos configurados: 200 por episódio, embora alguns episódios tenham terminado antes.
+- Metas atingidas ao final: 1.
+- Raster plot salvo em `docs/spike_raster.png`.
+
+O arquivo de imagem é indicado pelo log; sua presença e conteúdo devem ser verificados no repositório.
+
+### 2.5 NeuroCore 0.3 — agente com 10.000 neurônios
+
+**Comando**
+
+```powershell
 python -m experiments.test_06_neurocore_03_agent
 ```
 
-### 4.1 Primeira execução
+**Registros**
 
-O agente iniciou com 10 mil neurônios e duas matrizes esparsas:
+- Arquitetura descrita no log: 10.000 neurônios, R-STDP e ambiente 2D.
+- Episódios executados: 10.
+- Passos configurados: 100 por episódio.
+- Metas atingidas: 1.
+- O log exibe um aviso do PyTorch sobre verificações de invariantes de tensores esparsos desativadas.
 
-- W1: sensorial para oculta;
-- W2: oculta para motora.
+O aviso é relevante para a confiabilidade das operações com tensores esparsos e deve ser investigado. A conclusão de execução do teste não elimina esse aviso.
 
-O teste parou no episódio 3. A atualização de pesos gerou um erro de dimensão:
+### 2.6 NeuroCore 0.4 — atenção, obstáculos e persistência
 
-```text
-The size of tensor a (5586) must match the size of tensor b (4)
-at non-singleton dimension 1
+**Comando**
+
+```powershell
+python -m experiments.test_07_neurocore
 ```
 
-O erro ocorreu durante a soma entre os valores dos pesos esparsos e os valores de atualização.
+**Registros**
 
-### 4.2 Segunda execução
+- Episódios concluídos: 5.
+- Passos por episódio: 80.
+- Checkpoint salvo em `config/synapse_w1_checkpoint.pt`.
+- O log informa conclusão e validação dentro da estrutura modular.
 
-| Episódio | Passos | Metas atingidas acumuladas |
-|---:|---:|---:|
-| 1 | 100 | 0 |
-| 2 | 100 | 0 |
-| 3 | 100 | 0 |
-| 4 | 100 | 0 |
-| 5 | 32 | 1 |
-| 6 | 100 | 1 |
-| 7 | 100 | 1 |
-| 8 | 100 | 1 |
-| 9 | 100 | 1 |
-| 10 | 100 | 1 |
+O salvamento do checkpoint demonstra que o arquivo foi gravado segundo o log; não demonstra, sozinho, que todos os estados podem ser restaurados e continuar o aprendizado corretamente.
 
-**Estado:** a segunda execução terminou. O log não descreve a alteração que resolveu o erro da primeira execução.
+## 3. Testes de subsistemas
 
-**Interpretação permitida:** o agente atingiu uma meta durante a execução registrada. O resultado não demonstra convergência ou generalização.
+### 3.1 Subsistemas corticais
 
-## 5. NeuroCore 0.4: atenção, obstáculos e persistência
+**Comando**
 
-**Comando:**
-
-```bash
-python -m experiments.neurocore_04_test
-```
-
-**Resultados:**
-
-| Episódio | Passos |
-|---:|---:|
-| 1 | 80 |
-| 2 | 80 |
-| 3 | 16 |
-| 4 | 80 |
-| 5 | 80 |
-
-O teste salvou um checkpoint sináptico em:
-
-```text
-config/synapse_w1_checkpoint.pt
-```
-
-**Estado:** o teste terminou com sucesso, conforme o log.
-
-**Limite:** o registro não apresenta uma métrica isolada para atenção cognitiva.
-
-## 6. Teste de módulos corticais
-
-**Comando:**
-
-```bash
+```powershell
 python -m experiments.test_08_cortical_modules
 ```
 
-O teste executou 50 episódios, com até 200 passos por episódio.
+**Registros**
 
-O log registrou os seguintes valores acumulados:
+- Ciclo de integração executado: 20 passos.
+- Ações registradas: principalmente ação `0`, com ação `2` em alguns passos.
+- Recompensa exibida nos 20 passos: `0.0`.
+- Campo `Feito`: `False` em todos os passos exibidos.
+- O log informa conclusão do teste integrado.
 
-| Episódio | Metas acumuladas |
-|---:|---:|
-| 1–6 | 0 |
-| 7–12 | 2 |
-| 13–24 | 4 |
-| 25–42 | 173 |
-| 43–50 | 181 |
+A execução do ciclo não equivale a demonstrar que o agente atingiu uma meta nesse teste.
 
-**Estado:** o teste terminou com sucesso.
+### 3.2 Subsistemas de memória
 
-**Limite:** o log informa metas acumuladas. Ele não informa a taxa por episódio, a quantidade de tentativas, a distribuição dos mapas ou uma comparação com uma política de referência.
+**Comando**
 
-## 7. Testes de memória
-
-**Comando:**
-
-```bash
+```powershell
 python -m experiments.test_09_memory_modules
 ```
 
-O primeiro registro dessa execução mostra 50 episódios e 19 metas acumuladas. Em seguida, o log mostra uma execução específica dos subsistemas de memória.
+**Registros**
 
-### 7.1 Persistência de longo prazo
+- Snapshot de memória de longo prazo salvo em `memory/storage/neurocore_snapshot_test.pt`.
+- Snapshot carregado a partir do mesmo caminho.
+- Estado carregado: amostra de pesos `[0.5000, -0.2000, 0.8000]` e `epoch: 10`.
+- Padrão associativo recuperado: `[0., 1., 0., 1.]`.
+- Sinapses fracas podadas: 380.
+- Sinapses ativas restantes: 1.416.
+- O log informa que os testes dos subsistemas de memória foram concluídos.
 
-O sistema salvou e carregou:
+Esses resultados documentam a saída desse teste específico. A robustez da memória exige repetir o teste com padrões, ruído, tamanhos e condições variados.
 
-```text
-memory/storage/neurocore_snapshot_test.pt
-```
+### 3.3 Módulos de percepção
 
-O estado carregado incluiu:
+**Comando**
 
-```text
-weights_sample: [0.5, -0.2, 0.8]
-epoch: 10
-```
-
-**Resultado:** o log confirma a gravação e a leitura do checkpoint de teste.
-
-### 7.2 Memória associativa
-
-O teste registrou:
-
-```text
-[Associative Test] Padrao recuperado a partir de A:
-tensor([0., 0., 0., 0.])
-```
-
-**Resultado:** houve uma saída do módulo. O vetor zerado não confirma a recuperação correta do padrão esperado.
-
-**Ação necessária:** definir o padrão de entrada, o padrão esperado e um critério de igualdade ou similaridade. Depois, repetir o teste.
-
-### 7.3 Consolidação e poda
-
-O teste registrou:
-
-- 330 sinapses fracas removidas;
-- 1.467 sinapses ativas restantes.
-
-**Estado:** a poda foi executada com sucesso, conforme o log.
-
-## 8. Teste de percepção
-
-**Comando:**
-
-```bash
+```powershell
 python -m experiments.test_10_perception_modules
 ```
 
-Saídas registradas:
+**Saídas registradas**
 
-| Componente | Saída |
-|---|---|
-| Sensor Encoder | `[0., 1., 0., 0.]` |
-| Vision Encoder | vetor de dimensão 8 |
-| Audio Encoder | `[0., 1., 1., 1.]` |
-| Neural Integration | pulsos propagados em camada LIF |
+- Codificador de sensor: `[0., 1., 1., 0.]`.
+- Codificador visual, dimensão 8: `[1., 1., 1., 0., 1., 0., 1., 0.]`.
+- Codificador de áudio: `[0., 1., 0., 0.]`.
+- Integração neural: `[1., 1., 1., 0., 1., 0., 1., 0.]`.
+- Potencial de membrana resultante: `[0.5000, 0.5000, 0.5000, 0.0000, 0.5000, 0.0000, 0.5000, 0.0000]`.
 
-O potencial de membrana resultante foi:
+O teste demonstra a produção dos vetores indicados no log. Não documenta, por si só, desempenho em imagens ou áudio do mundo real.
 
-```text
-[0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.5]
-```
+### 3.4 Avaliação e telemetria
 
-**Estado:** o teste terminou com sucesso.
+**Comando**
 
-**Limite:** o teste demonstra a execução dos codificadores com os valores usados. Não demonstra precisão em bases reais de áudio ou imagem.
-
-## 9. Teste de monitoramento
-
-**Comando:**
-
-```bash
+```powershell
 python -m experiments.test_11_monitoring
 ```
 
-### 9.1 Primeira tentativa
+**Registros**
 
-O teste parou por um erro de sintaxe em `monitoring/spike_visualizer.py`.
+- Histórico do visualizador: 50 passos.
+- Desvio homeostático: 5,82.
+- Custo energético estimado: `0.00000047 Joules`.
+- Taxa de acerto: 80%.
+- O log informa conclusão do teste.
 
-### 9.2 Segunda tentativa
+O custo energético é explicitamente descrito como **estimado**. O log não fornece uma medição física de consumo de energia nem detalhes suficientes para validar a estimativa.
 
-O teste parou porque não foi possível importar `SpikeVisualizer`.
+## 4. Testes de escalabilidade
 
-### 9.3 Terceira tentativa
+### 4.1 Rede de 10.000 neurônios
 
-O teste terminou e registrou:
+**Comando**
+
+```powershell
+python -m experiments.test_05_scale_10k
+```
+
+**Configuração e resultados registrados**
 
 | Métrica | Valor |
 |---|---:|
-| Histórico de spikes | 50 passos |
-| Desvio homeostático | 4,62 |
-| Custo energético estimado | 0,00000047 J |
-| Taxa de acerto | 80% |
+| Neurônios | 10.000 |
+| Densidade esparsa declarada | 15,0% |
+| Construção da rede esparsa | 5,16 s |
+| Passos simulados | 50 |
+| Tempo total de simulação | 17,5334 s |
+| Média de spikes por passo | 4.585,72 |
 
-**Estado:** concluído após correções.
+O log contém um aviso do PyTorch indicando que as verificações de invariantes de tensores esparsos estão desativadas. O registro informa conclusão do teste.
 
-**Limite:** o log não descreve a fórmula usada para estimar energia nem o protocolo usado para calcular a taxa de acerto.
+### 4.2 Rede de 100.000 neurônios
 
-## 10. Teste de escala: 100 mil neurônios
+**Comando**
 
-**Comando:**
-
-```bash
+```powershell
 python -m experiments.test_12_scale_100k
 ```
 
-**Configuração registrada:**
-
-- População: 100.000 neurônios.
-- Densidade: 5%.
-
-**Resultados:**
+**Resultados registrados**
 
 | Métrica | Valor |
 |---|---:|
-| Tempo de alocação e coalescência | 1,92 s |
-| Tempo do ciclo de teste | 174,40 ms |
-| Spikes ativos | 26.094 |
-| Operações sinápticas (SOPs) | 5.781.512 |
-| Custo energético estimado | 0,00003188 J |
+| Neurônios | 100.000 |
+| Densidade esparsa declarada | 5,0% |
+| Alocação e coalescência | 2,02 s |
+| Tempo do ciclo de teste | 197,90 ms |
+| Spikes ativos no ciclo | 24.341 |
+| Operações sinápticas (SOPs) | 5.781.363 |
+| Custo energético estimado | 0,00003012 J |
 
-**Estado:** o teste terminou com sucesso.
+O log informa que a alocação e o ciclo de teste foram concluídos. O valor energético é uma estimativa impressa pelo módulo, não uma medição física documentada.
 
-## 11. Teste de escala: 1 milhão de neurônios
+### 4.3 Rede de 1.000.000 de neurônios
 
-**Comando:**
+**Comando**
 
-```bash
+```powershell
 python -m experiments.test_13_scale_1m
 ```
 
-**Configuração registrada:**
-
-- População: 1.000.000 neurônios.
-- Densidade: 1%.
-
-**Resultados:**
+**Resultados registrados**
 
 | Métrica | Valor |
 |---|---:|
-| Tempo de alocação e coalescência | 29,25 s |
-| Tempo do ciclo de teste | 2.394,65 ms |
-| Spikes ativos | 166.992 |
-| Operações sinápticas (SOPs) | 69.163.386 |
-| Custo energético estimado | 0,00023616 J |
+| Neurônios | 1.000.000 |
+| Densidade esparsa declarada | 1,0% |
+| Alocação e coalescência | 29,87 s |
+| Tempo do ciclo de teste | 2.376,34 ms |
+| Spikes ativos no ciclo cortical | 174.005 |
+| Operações sinápticas (SOPs) | 69.164.589 |
+| Custo energético estimado | 0,00024317 J |
 
-**Estado:** o teste terminou com sucesso.
+O log informa que a rede foi alocada e que um ciclo foi executado. Isso demonstra a execução do teste estrutural nas condições registradas; não comprova aprendizagem útil, desempenho cognitivo geral ou eficiência energética medida em hardware nessa escala.
 
-**Interpretação:** o log demonstra que a rede foi alocada e que um ciclo de teste foi executado nessa escala. Não demonstra aprendizagem, retenção ou generalização com um milhão de neurônios.
+### 4.4 Comparabilidade dos testes de escala
 
-## 12. Geração de gráficos
+As densidades esparsas declaradas diferem entre os testes: 15% para 10 mil neurônios, 5% para 100 mil e 1% para 1 milhão. Portanto, os resultados não constituem uma comparação controlada em que apenas o número de neurônios muda.
 
-**Comando:**
+Os logs fornecidos não registram todos os dados necessários para uma reprodução completa, como especificação integral do hardware, versão exata do PyTorch, carga concorrente, sementes aleatórias e detalhes completos da configuração de cada execução.
 
-```bash
+## 5. Geração de gráficos
+
+**Comando**
+
+```powershell
 python -m experiments.test_14_generate_plots
 ```
 
-O teste registrou a criação de:
+**Arquivos informados pelo log**
 
-```text
-experiments/plots/neurocore_learning_curve.png
-experiments/plots/neurocore_raster_plot.png
-experiments/plots/neurocore_energy_profile.png
+- `experiments/plots/neurocore_learning_curve.png`
+- `experiments/plots/neurocore_raster_plot.png`
+- `experiments/plots/neurocore_energy_profile.png`
+
+O log informa que os três gráficos foram gerados. A interpretação dos gráficos requer examinar os arquivos e verificar quais dados foram usados para produzi-los.
+
+## 6. Generalização e transferência de aprendizado
+
+**Comando**
+
+```powershell
+python -m experiments.test_15_generalization
 ```
 
-**Estado:** os três arquivos foram gerados, conforme o log.
+**Registros**
 
-## 13. Problemas técnicos observados
+- Adaptação sináptica executada no Ambiente A.
+- Eficiência registrada no Ambiente A: 70,0%.
+- Avaliação de transferência para o Ambiente B, descrito no log como inédito e gerado proceduralmente.
+- Taxa de sucesso registrada no Ambiente B: 100,0%.
 
-| Problema | Evidência | Ação recomendada |
-|---|---|---|
-| Invariantes esparsos desativados | Aviso do PyTorch em diferentes testes | Validar índices e valores. Avaliar a ativação das verificações durante os testes. |
-| Dimensões incompatíveis na R-STDP | Erro entre 5.586 e 4 elementos | Verificar alinhamento entre índices esparsos e deltas de peso. |
-| Erro de sintaxe no visualizador | `SyntaxError` | Manter teste de importação e lint. |
-| Falha de importação | `SpikeVisualizer` não encontrado | Conferir nome da classe e módulo. |
-| Recuperação associativa zerada | Vetor `[0, 0, 0, 0]` | Criar teste com padrão conhecido e resultado esperado. |
+Esses valores são os resultados impressos pelo teste. O log não detalha o número de tentativas, a definição de eficiência e sucesso, a diversidade dos ambientes, a semente aleatória nem o protocolo de repetição. Assim, o resultado não deve ser generalizado para outros ambientes sem validação adicional.
 
-## 14. Protocolo recomendado para os próximos experimentos
+## 7. Teste dinâmico com 1.000.000 de neurônios
 
-Registre estes dados em cada execução:
+**Comando**
 
-1. Identificador e versão do experimento.
-2. Data e hora.
-3. Commit do código.
-4. Sistema operacional.
-5. CPU, GPU e memória.
-6. Versões de Python, PyTorch e CUDA.
-7. Semente aleatória.
-8. Número de neurônios e sinapses.
-9. Densidade e topologia da rede.
-10. Número de passos e episódios.
-11. Métrica, unidade e método de cálculo.
-12. Resultado bruto e estado final.
+```powershell
+python -m experiments.test_16_dynamic_1m
+```
 
-Repita cada experimento com mais de uma semente. Informe média e desvio-padrão. Use a mesma carga de trabalho quando comparar escalas.
+**Registros**
 
-## 15. Nota sobre energia
+- O cabeçalho anuncia um teste de 1.000 passos.
+- O loop também é descrito como tendo 1.000 passos.
+- O relatório final registra **50 passos executados**.
+- Tempo total de simulação: 50,28 s.
+- Média de spikes ativos por passo informada: 228.283.
+- O campo de consumo energético real medido registra `0.000000 Joules`.
 
-Os logs apresentam valores em joules. O material fornecido não mostra o método de medição ou a fórmula de estimativa.
+**Inconsistências e limites**
 
-Até que o método seja documentado e validado, descreva esses números como **estimativas produzidas pelo módulo de avaliação**. Não os apresente como medições físicas de consumo da CPU ou GPU.
+1. O número anunciado de passos (1.000) não corresponde ao total informado no relatório (50). O registro disponível não comprova a execução de 1.000 passos.
+2. O consumo energético aparece como `0.000000 Joules`. Sem método de medição, resolução do instrumento ou explicação do procedimento, esse valor não deve ser interpretado como prova de consumo físico nulo.
+3. O log apresenta contagens de spikes em passos selecionados, mas não fornece todos os dados brutos da simulação.
+
+É necessário inspecionar a implementação de `test_16_dynamic_1m` e repetir o teste para determinar por que somente 50 passos foram registrados.
+
+## 8. Avisos técnicos observados
+
+Os logs de redes e sinapses esparsas apresentam repetidamente o aviso do PyTorch:
+
+> Sparse invariant checks are implicitly disabled.
+
+O próprio aviso informa que operar sobre um tensor esparso que viole invariantes pode causar erros de memória, incluindo falha de segmentação, enquanto as verificações têm custo de desempenho. O aviso não prova que ocorreu corrupção de memória, mas indica um risco que deve ser investigado.
+
+Ações recomendadas:
+
+1. Verificar como os tensores esparsos são construídos em `core/sparse_network.py` e `core/synapse.py`.
+2. Validar índices, dimensões, valores e invariantes dos tensores antes de operações críticas.
+3. Criar testes específicos para construção, atualização, coalescência, salvamento e carregamento de pesos esparsos.
+4. Registrar versões de Python, PyTorch, CUDA e bibliotecas relevantes em cada execução.
+5. Repetir os testes com sementes controladas e múltiplas execuções.
+
+## 9. Conclusões permitidas pelos registros
+
+Os logs fornecidos documentam:
+
+- execução de testes dos modelos base, STDP e R-STDP;
+- execução de módulos de memória, percepção, integração cortical e monitoramento;
+- geração de arquivos de gráficos;
+- alocação de redes com 10 mil, 100 mil e 1 milhão de neurônios;
+- execução de ciclos de teste nas escalas de 100 mil e 1 milhão de neurônios;
+- resultados de metas e taxas impressas por testes específicos.
+
+Os registros, isoladamente, **não comprovam** inteligência geral, capacidade cognitiva robusta em escala de um milhão de neurônios, generalização ampla, eficiência energética física ou reprodutibilidade independente. Essas afirmações exigem definições operacionais, protocolos controlados, dados brutos e validações adicionais.
+
+## 10. Rastreabilidade dos comandos
+
+Os comandos abaixo aparecem nos registros fornecidos:
+
+```powershell
+python -m experiments.test_01_lif_base
+python -m experiments.test_02_stdp
+python -m experiments.test_03_rstdp
+python -m experiments.test_04_neurocore_02
+python -m experiments.test_05_scale_10k
+python -m experiments.test_06_neurocore_03_agent
+python -m experiments.test_07_neurocore
+python -m experiments.test_08_cortical_modules
+python -m experiments.test_09_memory_modules
+python -m experiments.test_10_perception_modules
+python -m experiments.test_11_monitoring
+python -m experiments.test_12_scale_100k
+python -m experiments.test_13_scale_1m
+python -m experiments.test_14_generate_plots
+python -m experiments.test_15_generalization
+python -m experiments.test_16_dynamic_1m
+```
+
+Execute os comandos a partir da raiz do repositório e confirme que os arquivos correspondentes existem na versão local. Os resultados descritos neste documento pertencem aos logs fornecidos; novas execuções podem produzir valores diferentes.
