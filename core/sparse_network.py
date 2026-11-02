@@ -4,6 +4,8 @@
 import torch
 import torch.nn as nn
 
+from core.config_loader import get_config_value
+
 
 class SparseSynapseNetwork(nn.Module):
     def __init__(
@@ -12,8 +14,12 @@ class SparseSynapseNetwork(nn.Module):
         num_pres: int,
         density: float = 0.15,
         weight_scale: float = 0.1,
+        config: dict | None = None,
     ):
         super().__init__()
+
+        density = get_config_value(config, "network.connectivity_density", density)
+        weight_scale = get_config_value(config, "network.weight_init_scale", weight_scale)
 
         if num_posts <= 0 or num_pres <= 0:
             raise ValueError("O número de neurônios deve ser positivo.")
@@ -27,6 +33,11 @@ class SparseSynapseNetwork(nn.Module):
         self.num_posts = num_posts
         self.num_pres = num_pres
         self.density = density
+        self.weight_min = get_config_value(config, "network.weight_min", -1.0)
+        self.weight_max = get_config_value(config, "network.weight_max", 1.0)
+        self.weight_init_scale = weight_scale
+        if self.weight_min > self.weight_max:
+            raise ValueError("network.weight_min não pode ser maior que weight_max.")
 
         total_possible = num_posts * num_pres
         target_connections = max(
@@ -54,15 +65,16 @@ class SparseSynapseNetwork(nn.Module):
         indices = torch.stack([idx_post, idx_pre]).long()
 
         values = torch.randn(target_connections) * weight_scale
-        # Keep initial weights within the same bounds used during learning.
-        values = torch.clamp(values, min=-1.0, max=1.0)
+        values = values.clamp(min=self.weight_min, max=self.weight_max)
 
-        self.sparse_weights = torch.sparse_coo_tensor(
-            indices,
-            values,
-            size=(num_posts, num_pres),
-            check_invariants=True,
-        ).coalesce()
+        self.register_buffer(
+            "sparse_weights",
+            torch.sparse_coo_tensor(
+                indices,
+                values,
+                size=(num_posts, num_pres),
+            ).coalesce(),
+        )
 
     def get_dense_weights(self) -> torch.Tensor:
         """Retorna uma representação densa dos pesos."""
@@ -93,7 +105,7 @@ class SparseSynapseNetwork(nn.Module):
         current = torch.sparse.mm(self.sparse_weights, spk_pre)
         return current.squeeze(1)
 
-    def update_sparse_weights(self, delta_values: torch.Tensor):
+    def update_sparse_weights(self, delta_values: torch.Tensor, weight_min: float | None = None, weight_max: float | None = None):
         """Atualiza os pesos mantendo a estrutura esparsa."""
         weights = self.sparse_weights.coalesce()
         indices = weights.indices()
@@ -106,7 +118,14 @@ class SparseSynapseNetwork(nn.Module):
         )
 
         if delta_values.is_sparse:
-            delta_values = delta_values.coalesce().values()
+            sparse_delta = delta_values.coalesce()
+            if tuple(sparse_delta.shape) != tuple(weights.size()):
+                raise ValueError("A matriz esparsa de deltas possui dimensões incorretas.")
+            if torch.equal(sparse_delta.indices(), indices):
+                delta_values = sparse_delta.values()
+            else:
+                dense_delta = sparse_delta.to_dense()
+                delta_values = dense_delta[indices[0], indices[1]]
 
         elif delta_values.dim() > 1:
             # Aceita uma matriz densa de deltas.
@@ -130,11 +149,13 @@ class SparseSynapseNetwork(nn.Module):
             )
 
         delta_values = delta_values.reshape_as(current_values)
+        if not torch.isfinite(delta_values).all():
+            raise ValueError("Os deltas de peso precisam ser finitos.")
 
         updated_values = torch.clamp(
             current_values + delta_values,
-            min=-1.0,
-            max=1.0,
+            min=self.weight_min if weight_min is None else weight_min,
+            max=self.weight_max if weight_max is None else weight_max,
         )
 
         self.sparse_weights = torch.sparse_coo_tensor(
@@ -142,7 +163,6 @@ class SparseSynapseNetwork(nn.Module):
             updated_values,
             size=weights.size(),
             device=updated_values.device,
-            check_invariants=False,
         ).coalesce()
 
     def save_checkpoint(self, filepath: str):
@@ -155,6 +175,9 @@ class SparseSynapseNetwork(nn.Module):
                 "values": weights.values().cpu(),
                 "size": tuple(weights.size()),
                 "density": self.density,
+                "weight_min": self.weight_min,
+                "weight_max": self.weight_max,
+                "weight_init_scale": self.weight_init_scale,
             },
             filepath,
         )
@@ -167,6 +190,7 @@ class SparseSynapseNetwork(nn.Module):
         filepath: str,
         density: float = 0.15,
         map_location: str = "cpu",
+        config: dict | None = None,
     ):
         """Carrega uma rede esparsa de um checkpoint."""
         checkpoint = torch.load(
@@ -182,11 +206,22 @@ class SparseSynapseNetwork(nn.Module):
         instance.num_pres = checkpoint["size"][1]
         instance.density = checkpoint.get("density", density)
 
-        instance.sparse_weights = torch.sparse_coo_tensor(
-            checkpoint["indices"],
-            checkpoint["values"],
-            size=checkpoint["size"],
-            check_invariants=True,
-        ).coalesce()
+        instance.weight_min = checkpoint.get(
+            "weight_min", get_config_value(config, "network.weight_min", -1.0)
+        )
+        instance.weight_max = checkpoint.get(
+            "weight_max", get_config_value(config, "network.weight_max", 1.0)
+        )
+        instance.weight_init_scale = checkpoint.get(
+            "weight_init_scale", get_config_value(config, "network.weight_init_scale", 0.1)
+        )
+        instance.register_buffer(
+            "sparse_weights",
+            torch.sparse_coo_tensor(
+                checkpoint["indices"],
+                checkpoint["values"],
+                size=checkpoint["size"],
+            ).coalesce(),
+        )
 
         return instance

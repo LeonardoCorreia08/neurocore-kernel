@@ -6,13 +6,23 @@ try:
 except ImportError:
     NVML_AVAILABLE = False
 
+
+def _settings(config):
+    if not config:
+        return {}
+    return config.get("monitoring", config).get("hardware", {})
+
+
 class HardwareTelemetry:
-    def __init__(self):
+    def __init__(self, device_index: int = 0, energy_divisor: float = 1000.0, config: dict = None):
+        settings = _settings(config)
+        self.device_index = settings.get("device_index", device_index)
+        self.energy_divisor = settings.get("energy_divisor", energy_divisor)
         self.initialized = False
         if NVML_AVAILABLE:
             try:
                 pynvml.nvmlInit()
-                self.handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+                self.handle = pynvml.nvmlDeviceGetHandleByIndex(self.device_index)
                 self.initialized = True
             except Exception as e:
                 print(f"[Telemetry Warning] Não foi possível inicializar NVML: {e}")
@@ -26,25 +36,18 @@ class HardwareTelemetry:
         """Para a medição e retorna o consumo real em Joules e tempo decorrido."""
         end_time = time.time()
         final_energy = self._get_energy_uj()
-        
         elapsed_time = end_time - self.start_time
-        
         energy_joules = 0.0
         if self.initialized and final_energy >= self.initial_energy:
-            # NVML fornece energia em miliJoules ou Joules dependendo da versão, 
-            # geralmente _get_energy_uj retorna em microjoules ou mililitros de energia.
-            energy_joules = (final_energy - self.initial_energy) / 1000000.0 # Conversão se microjoules
-            
-        return {
-            "elapsed_seconds": elapsed_time,
-            "energy_joules": energy_joules
-        }
+            # NVML total-energy API reports millijoules; 1000 mJ equals 1 J.
+            energy_joules = (final_energy - self.initial_energy) / self.energy_divisor
+        return {"elapsed_seconds": elapsed_time, "energy_joules": energy_joules}
 
     def _get_energy_uj(self) -> int:
         if not self.initialized:
             return 0
         try:
-            # Retorna a energia total consumida pela placa desde o boot (em millijoules)
+            # nvmlDeviceGetTotalEnergyConsumption returns millijoules.
             return pynvml.nvmlDeviceGetTotalEnergyConsumption(self.handle)
         except Exception:
             return 0

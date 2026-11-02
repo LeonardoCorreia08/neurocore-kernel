@@ -1,7 +1,4 @@
-"""Crítico linear TD(0) para estimar valor de estados contínuos em RL."""
-
 from __future__ import annotations
-
 import numpy as np
 
 
@@ -51,6 +48,9 @@ class LinearTDCritic:
         `done=True` zera o bootstrap. `truncated=True` continua bootstrapando,
         pois o limite externo não significa que a tarefa terminou naturalmente.
         """
+        if not np.isfinite(reward):
+            raise ValueError("reward precisa ser finito")
+            
         features = self._features(state)
         self._ensure_weights(features.size)
         current_value = float(np.dot(self.weights, features))
@@ -76,8 +76,15 @@ class LinearTDCritic:
         }
 
     def load_state_dict(self, state: dict) -> None:
-        self.gamma = float(state["gamma"])
-        self.learning_rate = float(state["learning_rate"])
+        gamma = float(state["gamma"])
+        learning_rate = float(state["learning_rate"])
+        if not 0.0 <= gamma <= 1.0:
+            raise ValueError("gamma inválido no snapshot")
+        if not 0.0 < learning_rate <= 1.0:
+            raise ValueError("learning_rate inválido no snapshot")
+        self.gamma = gamma
+        self.learning_rate = learning_rate
+        
         saved_weights = state.get("weights")
         if saved_weights is None:
             self.weights = None

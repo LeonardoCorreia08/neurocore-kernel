@@ -1,32 +1,184 @@
-# Configuração Global do NeuroCore
-project: "neurocore-kernel"
-version: "0.3-alpha"
+# NeuroCore — configuração canônica.
+# Perfil main_preserve_behavior mantém os valores que main.py usava antes da
+# centralização; outros módulos mantêm parâmetros próprios quando seus defaults
+# são diferentes. O entrypoint carrega este arquivo e injeta as seções nos módulos.
+project: neurocore-kernel
+config_version: 1
+profile: main_preserve_behavior
 
-# Configuração de Escala da Rede
-scale:
-  target_neurons: 10000  # Alternar entre 1000 e 10000 conforme necessário
-  connectivity_density: 0.15 # 15% de esparsidade (conexões locais)
+runtime:
+  episodes: 1000
+  max_steps_per_episode: 50
+  checkpoint_every: 100
+  log_interval: 100
+  render_last_episodes: 5
+  render_pause_seconds: 0.05
+  seed: 42
+  render: true
+  moving_average_window: 50
+  render_live_figure_size: [6, 6]
+  final_figure_size: [10, 5]
+  agent_radius: 2.0
 
-# Hiperparâmetros do Módulo 1 (Neural Engine - LIF)
+network:
+  layer_sizes: [4, 32, 4]
+  connectivity_density: 0.25
+  device: auto
+  weight_init_scale: 0.1
+  weight_min: -1.0
+  weight_max: 1.0
+  legacy_synapse_manager:
+    density: 0.15
+    weight_init_scale: 0.2
+    weight_min: -1.0
+    weight_max: 1.0
+
 neuron:
-  threshold: 0.5
-  beta: 0.9              # Fator de decaimento do potencial de membrana (tau_m)
+  threshold: 1.0
+  decay: 0.9
   rest_potential: 0.0
+  threshold_min: 0.1
+  threshold_max: 5.0
 
-# Hiperparâmetros do Módulo 3 (Learning Engine - R-STDP)
+simulation:
+  time_steps: 20
+
 learning:
-  lr: 0.01
-  tau_trace: 20.0
-  tau_eligibility: 50.0
-  a_plus: 1.0
-  a_minus: -1.0
+  enable_stdp: true
+  enable_rstdp: true
+  enable_homeostasis: true
+  stdp:
+    lr: 0.005
+    tau_trace: 20.0
+    a_plus: 1.0
+    a_minus: -1.0
+  rstdp:
+    lr: 0.01
+    tau_trace: 20.0
+    tau_eligibility: 50.0
+    a_plus: 1.0
+    a_minus: -1.0
+  homeostasis:
+    target_firing_rate: 0.1
+    tau_avg: 100.0
+    adjustment_rate: 0.01
+    threshold_min: 0.1
+    threshold_max: 5.0
 
-# Hiperparâmetros da Memória de Curto Prazo (Memory Engine)
-memory:
-  history_steps: 5
-
-# Configuração do Ambiente Virtual (Arena 2D)
 environment:
   width: 100
   height: 100
-  max_steps_per_episode: 200
+  step_size: 5.0
+  goal_radius: 5.0
+  obstacle_radius: 4.0
+  sensor_range: 20.0
+  spawn_min_goal_distance: 20.0
+  max_spawn_attempts: 10000
+  obstacles: [[40.0, 40.0], [60.0, 70.0], [30.0, 80.0]]
+  reward:
+    per_step: -0.01
+    goal: 1.0
+    obstacle_collision: -0.5
+
+perception:
+  sensor_encoder:
+    max_rate: 100.0
+    dt: 0.01
+    magnitude_min: 0.0
+    magnitude_max: 1.0
+  vision:
+    output_features: 16
+    max_rate: 150.0
+    dt: 0.01
+  audio:
+    frequency_bands: 8
+    max_rate: 120.0
+    dt: 0.01
+
+brain:
+  associative_cortex:
+    projection_init_scale: 0.1
+    membrane_leak: 0.8
+    spike_threshold: 0.5
+  attention:
+    salience_threshold: 0.3
+    high_salience_gain: 1.8
+    low_salience_gain: 0.4
+    mask_init_value: 1.0
+    agent_danger_threshold: 0.5
+    agent_target_attenuation: 0.1
+  decision:
+    inhibition_strength: 0.5
+    membrane_leak: 0.7
+    spike_threshold: 1.0
+  motor:
+    selection_policy: first_active
+    no_spike_action: 0
+    action_ids: [0, 1, 2, 3]
+
+memory:
+  history_steps: 5
+  short_term_hidden_dim: null
+  episodic_buffer_max_size: 1000
+  checkpoint_dir: checkpoints/
+  checkpoint_filename: latest_brain_engram.pt
+  storage_dir: memory/storage
+  map_location: cpu
+  weights_only: true
+  associative:
+    vector_dim: null
+    recall_threshold: 0.5
+    weight_min: -10.0
+    weight_max: 10.0
+  consolidation_pruning_threshold: 0.01
+
+monitoring:
+  activity:
+    target_firing_rate: 20.0
+    dt: 0.01
+  performance:
+    joules_per_spike: 1.0e-9
+    joules_per_sop: 1.0e-12
+  hardware:
+    device_index: 0
+    energy_divisor: 1000.0
+  telemetry:
+    action_count: 4
+    min_action_id: 0
+    max_action_id: 3
+  spike_visualizer:
+    output_file: docs/spike_raster.png
+    figsize: [10, 4]
+    dpi: 300
+  experiment_logger:
+    seed: 42
+    output_dir: logs
+  experiment_plotter:
+    output_dir: experiments/plots
+    max_neurons: 150
+    dpi: 300
+    filenames: [learning_curve.png, raster_plot.png, energy_profile.png]
+
+# Valores antigos mantidos apenas para migração explícita, nunca lidos como
+# perfil principal enquanto existirem os paths canônicos acima.
+legacy:
+  scale:
+    target_neurons: 10000
+    connectivity_density: 0.15
+  neuron:
+    threshold: 0.5
+    beta: 0.9
+    rest_potential: 0.0
+  learning:
+    lr: 0.01
+    tau_trace: 20.0
+    tau_eligibility: 50.0
+    a_plus: 1.0
+    a_minus: -1.0
+  environment:
+    max_steps_per_episode: 200
+
+# Semânticas importantes: pesos inicializados são valores treináveis no runtime;
+# arquivos de checkpoint guardam peso/índice e vencem a escala de inicialização.
+# weight_min/max limitam futuras atualizações e não devem reclamp checkpoints ao
+# restaurar. Clamps e taxas específicas ficam nesta configuração, sem hardcode.

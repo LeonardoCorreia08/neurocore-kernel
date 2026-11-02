@@ -3,9 +3,13 @@ import torch
 from perception.sensor_encoder import SensorEncoder
 
 class AudioEncoder:
-    def __init__(self, frequency_bands: int = 8):
-        self.frequency_bands = frequency_bands
-        self.encoder = SensorEncoder(max_rate=120.0)
+    def __init__(self, frequency_bands: int = 8, config=None):
+        options = (config or {}).get("perception", {}).get("audio", {})
+        self.frequency_bands = int(options.get("frequency_bands", frequency_bands))
+        self.encoder = SensorEncoder(
+            max_rate=float(options.get("max_rate", 120.0)),
+            dt=float(options.get("dt", 0.01)),
+        )
 
     def encode_spectrum(self, spectrum_tensor: torch.Tensor) -> torch.Tensor:
         """

@@ -4,6 +4,8 @@
 import torch
 import torch.nn as nn
 
+from core.config_loader import get_config_value
+
 from core.neuron import LeakyIntegrateAndFire
 from core.sparse_network import SparseSynapseNetwork
 from learning.stdp import STDPManager
@@ -14,16 +16,25 @@ from learning.homeostasis import HomeostasisManager
 class SpikeEngine(nn.Module):
     def __init__(
         self,
-        layer_sizes: list[int],
-        density: float = 0.3,
+        layer_sizes: list[int] | None = None,
+        density: float = 0.2,
         device: str = None,
         enable_stdp: bool = True,
         enable_rstdp: bool = True,
         enable_homeostasis: bool = True,
-        weight_scale: float = 0.1,
+        config: dict | None = None,
     ):
         super().__init__()
 
+        layer_sizes = get_config_value(config, "network.layer_sizes", layer_sizes)
+        if layer_sizes is None:
+            raise ValueError("layer_sizes deve ser informado ou definido em config.")
+        density = get_config_value(config, "network.connectivity_density", density)
+        configured_device = get_config_value(config, "network.device", device)
+        device = configured_device if configured_device not in (None, "auto") else None
+        enable_stdp = get_config_value(config, "learning.enable_stdp", enable_stdp)
+        enable_rstdp = get_config_value(config, "learning.enable_rstdp", enable_rstdp)
+        enable_homeostasis = get_config_value(config, "learning.enable_homeostasis", enable_homeostasis)
         if len(layer_sizes) < 2:
             raise ValueError(
                 "layer_sizes precisa conter pelo menos duas camadas."
@@ -35,6 +46,7 @@ class SpikeEngine(nn.Module):
         if not 0.0 < density <= 1.0:
             raise ValueError("density precisa estar no intervalo (0, 1].")
 
+        self.config = config
         self.device = torch.device(
             device if device is not None else
             ("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,7 +65,9 @@ class SpikeEngine(nn.Module):
         self.neurons = nn.ModuleList([
             LeakyIntegrateAndFire(
                 num_neurons=size,
-                threshold=0.5,
+                threshold=get_config_value(config, "neuron.threshold", 1.0),
+                decay=get_config_value(config, "neuron.decay", 0.9),
+                config=config,
             )
             for size in layer_sizes
         ]).to(self.device)
@@ -72,40 +86,43 @@ class SpikeEngine(nn.Module):
                     num_post,
                     num_pre,
                     density=density,
-                    weight_scale=weight_scale,
+                    weight_scale=get_config_value(config, "network.weight_init_scale", 0.1),
+                    config=config,
                 ).to(self.device)
             )
 
             self.stdp_managers.append(
-                STDPManager(num_post, num_pre).to(self.device)
+                STDPManager(num_post, num_pre, lr=get_config_value(config, "learning.stdp.lr", 0.005), tau_trace=get_config_value(config, "learning.stdp.tau_trace", 20.0)).to(self.device)
             )
 
             self.rstdp_managers.append(
-                RSTDPManager(num_post, num_pre).to(self.device)
+                RSTDPManager(num_post, num_pre, lr=get_config_value(config, "learning.rstdp.lr", 0.01), tau_trace=get_config_value(config, "learning.rstdp.tau_trace", 20.0), tau_eligibility=get_config_value(config, "learning.rstdp.tau_eligibility", 50.0)).to(self.device)
             )
+
+            self.stdp_managers[-1].A_plus = get_config_value(config, "learning.stdp.a_plus", 1.0)
+            self.stdp_managers[-1].A_minus = get_config_value(config, "learning.stdp.a_minus", -1.0)
+            self.rstdp_managers[-1].A_plus = get_config_value(config, "learning.rstdp.a_plus", 1.0)
+            self.rstdp_managers[-1].A_minus = get_config_value(config, "learning.rstdp.a_minus", -1.0)
 
             self.homeostasis_managers.append(
                 HomeostasisManager(
                     num_post,
-                    target_firing_rate=0.1,
+                    target_firing_rate=get_config_value(config, "learning.homeostasis.target_firing_rate", 0.1),
+                    tau_avg=get_config_value(config, "learning.homeostasis.tau_avg", 100.0),
+                    adjustment_rate=get_config_value(config, "learning.homeostasis.adjustment_rate", 0.01),
+                    threshold_min=get_config_value(config, "learning.homeostasis.threshold_min", 0.1),
+                    threshold_max=get_config_value(config, "learning.homeostasis.threshold_max", 5.0),
+                    config=config,
                 )
+                .to(self.device)
             )
 
     def _get_indices(self, layer_idx: int) -> torch.Tensor:
         return self.synapses[layer_idx].sparse_weights.indices()
 
-    def forward(
-        self,
-        sensory_current: torch.Tensor,
-        teacher_action: int | None = None,
-    ) -> list[torch.Tensor]:
-        """Run one tick; teacher_action is used only for stored-experience replay."""
+    def forward(self, sensory_current: torch.Tensor) -> list[torch.Tensor]:
         if sensory_current.device != self.device:
             sensory_current = sensory_current.to(self.device)
-        if teacher_action is not None:
-            teacher_action = int(teacher_action)
-            if not 0 <= teacher_action < self.neurons[-1].num_neurons:
-                raise ValueError("teacher_action fora do intervalo da camada de saída")
 
         spikes = []
 
@@ -121,11 +138,6 @@ class SpikeEngine(nn.Module):
             current_post = self.synapses[i].forward_propagation(spk_pre)
             spk_post, _ = self.neurons[i + 1](current_post)
             spk_post = spk_post.view(-1)
-            if teacher_action is not None and i == self.num_layers - 2:
-                # Replay the historically selected action as a teaching spike.
-                spk_post = torch.zeros_like(spk_post)
-                spk_post[teacher_action] = 1.0
-                self.neurons[i + 1].apply_reset(spk_post)
             spikes.append(spk_post)
 
             indices = self._get_indices(i)
@@ -145,28 +157,24 @@ class SpikeEngine(nn.Module):
                     indices,
                 )
 
-            # Teacher-forced replay injects a target spike by design; using
-            # that synthetic rate to adapt the output threshold would push
-            # it toward the homeostatic ceiling and silence recall.
-            is_teacher_forced_output = (
-                teacher_action is not None and i == self.num_layers - 2
-            )
-            if self.enable_homeostasis and not is_teacher_forced_output:
+            if self.enable_homeostasis:
                 self.homeostasis_managers[i].apply_homeostasis(
                     spk_post,
                     self.neurons[i + 1],
                 )
+                threshold = self.neurons[i + 1].threshold
+                if isinstance(threshold, torch.Tensor):
+                    self.neurons[i + 1].threshold = threshold.clamp(
+                        min=get_config_value(self.config, "learning.homeostasis.threshold_min", get_config_value(self.config, "neuron.threshold_min", 0.1)),
+                        max=get_config_value(self.config, "learning.homeostasis.threshold_max", get_config_value(self.config, "neuron.threshold_max", 5.0)),
+                    )
 
         return spikes
 
-    def apply_global_reward(self, reward: float, target_action: int | None = None):
-        """Modulate eligibilities, optionally gating motor-layer updates to one action."""
+    def apply_global_reward(self, reward: float):
+        """Aplica recompensa aos rastros de elegibilidade existentes."""
         if not self.enable_rstdp:
             return
-        if target_action is not None:
-            target_action = int(target_action)
-            if not 0 <= target_action < self.neurons[-1].num_neurons:
-                raise ValueError("target_action fora do intervalo da camada de saída")
 
         for i in range(self.num_layers - 1):
             indices = self._get_indices(i)
@@ -175,8 +183,6 @@ class SpikeEngine(nn.Module):
                 reward,
                 indices,
             )
-            if target_action is not None and i == self.num_layers - 2:
-                deltas = deltas * (indices[0] == target_action).to(deltas.dtype)
 
             self.synapses[i].update_sparse_weights(deltas)
 
