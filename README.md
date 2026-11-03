@@ -53,11 +53,11 @@ O sistema está organizado em cinco motores:
 
 Os subsistemas funcionais incluem percepção, córtex sensorial, memória, aprendizado, cognição e ação motora.
 
-Consulte [architecture.md](architecture.md) para conhecer os componentes e o fluxo de dados.
+Consulte [architecture.md](docs/architecture.md) para conhecer os componentes e o fluxo de dados.
 
 ## 3. Resultados registrados
 
-A tabela abaixo resume valores presentes nos logs fornecidos. Consulte [experiments_log.md](experiments_log.md) para detalhes, comandos e limitações de cada teste.
+A tabela abaixo resume valores presentes nos logs fornecidos. Consulte [experiments_log.md](docs/experiments_log.md) para detalhes, comandos e limitações de cada teste.
 
 | Experimento | Resultado registrado |
 |---|---|
@@ -85,7 +85,7 @@ O modelo neuronal de referência é o **Leaky Integrate-and-Fire (LIF)**.
 
 O aprendizado local usa **Spike-Timing-Dependent Plasticity (STDP)**. Os experimentos também incluem uma variante de aprendizado modulada por recompensa (R-STDP).
 
-Consulte [math_models.md](math_models.md) para ver as equações e as definições dos parâmetros.
+Consulte [math_models.md](docs/math_models.md) para ver as equações e as definições dos parâmetros.
 
 ## 5. Tecnologias registradas no projeto
 
