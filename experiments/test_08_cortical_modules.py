@@ -12,6 +12,7 @@ from environment.world import VirtualWorld2D
 
 def run_cortical_test():
     print("Iniciando Teste Integrado dos Subsistemas Corticais (NeuroCore)...")
+    torch.manual_seed(42)
     
     config = load_brain_config()
     # A escala desse experimento foi preservada no namespace de migração.
@@ -45,12 +46,15 @@ def run_cortical_test():
 
     print("Rodando ciclo de teste de integracao de 20 passos na arena...")
     sensors = world.reset()
+    action_counts = [0] * output_dim
+    total_decision_spikes = 0
     
     for step in range(20):
         x_sensory = torch.tensor(sensors, dtype=torch.float32)
         
         # 1. Atencao Cognitiva
-        gated_sensory = attention_engine.apply_attention(x_sensory)
+        # Compensa a atenuação da atenção para que o sinal possa alcançar o limiar LIF.
+        gated_sensory = attention_engine.apply_attention(x_sensory) * 2.0
         spk_sensory, _ = sensory_layer(gated_sensory)
         
         # 2. Cortex Associativo (Integra sensorial com feedback simulado)
@@ -67,6 +71,8 @@ def run_cortical_test():
         
         # 5. Decodificacao do Motor
         action_id = motor_engine.decode_action(decision_spikes)
+        action_counts[action_id] += 1
+        total_decision_spikes += int(decision_spikes.sum().item())
         
         # 6. Interacao com o Ambiente
         sensors, reward, done = world.step(action_id)
@@ -75,7 +81,14 @@ def run_cortical_test():
         if done:
             sensors = world.reset()
 
-    print("Teste integrado dos subsistemas corticais concluido com sucesso!")
+    print(f"[Diagnóstico] Spikes de decisão: {total_decision_spikes}; ações: {action_counts}")
+    if total_decision_spikes == 0:
+        print("[AVISO] Nenhum neurônio de decisão disparou; ação 0 pode ser apenas o fallback sem spikes.")
+    elif sum(count > 0 for count in action_counts) == 1:
+        print("[AVISO] Uma única ação foi selecionada; a integração não demonstrou diversidade comportamental.")
+    else:
+        print("[PASS] O circuito produziu spikes de decisão e mais de uma ação.")
+    print("Ciclo de integração concluído; este teste não mede aprendizagem nem sucesso em metas.")
 
 if __name__ == "__main__":
     run_cortical_test()

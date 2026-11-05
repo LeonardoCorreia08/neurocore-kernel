@@ -1,21 +1,21 @@
 {
   "test": "18_learning_retention",
   "seed": 18,
-  "status": "FAIL",
+  "status": "PASS",
   "checks": {
     "pattern_not_recalled_before_training": true,
     "association_learned": true,
     "association_retained_without_stimulus": true,
     "association_recovered_from_long_term_snapshot": true,
     "experience_in_long_term_snapshot": true,
-    "episodic_buffer_transferred_and_restored": false
+    "episodic_buffer_transferred_and_restored": true
   },
   "metrics": {
     "exact_match_before_training": false,
     "exact_match_after_training": true,
     "exact_match_after_no_stimulus_interval": true,
     "exact_match_after_long_term_restore": true,
-    "episodic_experiences_restored": 0
+    "episodic_experiences_restored": 1
   },
   "diagnostic_interpretation": {
     "association_learned": "Falha indica problema de aprendizagem/representação.",

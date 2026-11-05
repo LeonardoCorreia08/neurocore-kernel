@@ -11,7 +11,7 @@ Esta revisão compara os scripts do projeto com o log fornecido e ajusta chamada
 | 05 — Escala 10k | Substituído o acesso removido `config['scale']` pelo perfil de migração `legacy.scale`; corrigido o nome de parâmetro do LIF para `decay`. |
 | 06 — Agente 10k | Migrado para `legacy.scale`; as chamadas R-STDP agora passam índices coalescidos e atualizam as sinapses esparsas com os deltas alinhados. |
 | 07 — NeuroCore 0.4 | Migrado para `legacy.scale`; alinhadas as chamadas R-STDP e substituída a chamada inexistente de persistência por serialização explícita dos pesos esparsos. |
-| 08 — Módulos corticais | Migrado para `legacy.scale` e configuração injetada nas APIs que a aceitam. |
+| 08 — Módulos corticais | Migrado para `legacy.scale`; após o reteste revelar ação 0 em todos os passos, o estímulo atencional foi amplificado e o script agora registra spikes de decisão e contagem de ações, sem declarar diversidade comportamental automaticamente. Essa alteração ainda deve ser reexecutada. |
 | 09 — Memória associativa | Substituído o critério “qualquer spike significa memória” por padrão determinístico, pesos associativos Hebbianos e verificação de recuperação exata em cinco ciclos. |
 | 10 — Percepção | Sem alteração: o log registra execução concluída e as dimensões observadas são coerentes com os módulos. |
 | 11 — Monitoramento | Sem alteração: o log registra execução concluída; energia aparece arredondada como estimativa, não como medição exata. |
