@@ -9,16 +9,22 @@ def run_scale_10k_test():
     print("Carregando configuracoes do cerebro artificial...")
     config = load_brain_config()
     
-    # Ler parametros globais de escala
-    target_neurons = config["scale"]["target_neurons"]
-    density = config["scale"]["connectivity_density"]
-    threshold = config["neuron"]["threshold"]
-    beta = config["neuron"]["beta"]
+    # A escala deste experimento está no perfil legado da configuração central.
+    scale_config = config.get("legacy", {}).get("scale", {})
+    neuron_config = config.get("legacy", {}).get("neuron", {})
+    target_neurons = scale_config.get("target_neurons", 10_000)
+    density = scale_config.get("connectivity_density", 0.15)
+    threshold = neuron_config.get("threshold", 0.5)
+    beta = neuron_config.get("beta", 0.9)
     
     print(f"Iniciando Teste de Escala — Alvo: {target_neurons} neuronios | Densidade Esparsa: {density * 100}%")
     
     # 1. Instanciar a camada neural de grande escala
-    neuron_layer = LeakyIntegrateAndFire(num_neurons=target_neurons, threshold=threshold, beta=beta)
+    neuron_layer = LeakyIntegrateAndFire(
+        num_neurons=target_neurons,
+        threshold=threshold,
+        decay=beta,
+    )
     
     # 2. Instanciar a rede de sinapses esparsas (Matriz W de 10k x 10k esparsa)
     print("Construindo matriz de sinapses esparsas (aguarde alguns segundos)...")

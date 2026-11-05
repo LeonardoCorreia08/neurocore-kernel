@@ -1,0 +1,26 @@
+{
+  "test": "18_learning_retention",
+  "seed": 18,
+  "status": "FAIL",
+  "checks": {
+    "pattern_not_recalled_before_training": true,
+    "association_learned": true,
+    "association_retained_without_stimulus": true,
+    "association_recovered_from_long_term_snapshot": true,
+    "experience_in_long_term_snapshot": true,
+    "episodic_buffer_transferred_and_restored": false
+  },
+  "metrics": {
+    "exact_match_before_training": false,
+    "exact_match_after_training": true,
+    "exact_match_after_no_stimulus_interval": true,
+    "exact_match_after_long_term_restore": true,
+    "episodic_experiences_restored": 0
+  },
+  "diagnostic_interpretation": {
+    "association_learned": "Falha indica problema de aprendizagem/representação.",
+    "association_retained_without_stimulus": "Falha indica esquecimento durante o intervalo sem estímulo.",
+    "association_recovered_from_long_term_snapshot": "Falha indica problema na consolidação ou recuperação do snapshot.",
+    "episodic_buffer_transferred_and_restored": "Falha indica que a experiência episódica não chegou à memória de longo prazo."
+  }
+}

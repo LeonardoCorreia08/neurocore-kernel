@@ -1,8 +1,10 @@
 '''Modulo: memory/manager.py'''
 import os
+from pathlib import Path
 import torch
 from core.config_loader import get_config_value
 from core.spike_engine import SpikeEngine
+from memory.long_term import LongTermMemoryManager
 
 
 class MemoryManager:
@@ -17,6 +19,12 @@ class MemoryManager:
         os.makedirs(self.save_dir, exist_ok=True)
         self.episodic_buffer = []
         self.max_buffer_size = get_config_value(config, "memory.episodic_buffer_max_size", 1000)
+        self.long_term_memory = None
+
+    def _get_long_term_memory(self) -> LongTermMemoryManager:
+        if self.long_term_memory is None:
+            self.long_term_memory = LongTermMemoryManager(config=self.config)
+        return self.long_term_memory
 
     def store_experience(self, sensory_state: list[float], action: int, reward: float):
         experience = {"state": sensory_state, "action": action, "reward": reward}
@@ -28,7 +36,7 @@ class MemoryManager:
         self.episodic_buffer.clear()
 
     def consolidate_memory(self, memory_name: str | None = None):
-        """Salva as matrizes esparsas atuais no formato legado layer_N."""
+        """Salva pesos compatíveis e transfere episódios para memória de longo prazo."""
         memory_name = self.checkpoint_filename if memory_name is None else memory_name
         filepath = os.path.join(self.save_dir, memory_name)
         engram_data = {}
@@ -36,12 +44,19 @@ class MemoryManager:
             engram_data[f"layer_{idx}"] = {
                 'indices': synapse_layer.sparse_weights.indices().cpu(),
                 'values': synapse_layer.sparse_weights.values().cpu(),
-                'size': synapse_layer.sparse_weights.size()
+                'size': tuple(synapse_layer.sparse_weights.size())
             }
         # Metadados adicionais; chaves layer_N permanecem idênticas para leitores antigos.
         engram_data['_metadata'] = {'format': 'neurocore-memory', 'version': 1}
         torch.save(engram_data, filepath)
         print(f"[Memória] Engrama consolidado com sucesso em: {filepath}")
+        episode_snapshot = {
+            "format": "neurocore-episodic-memory",
+            "version": 1,
+            "episodic_buffer": [dict(item) for item in self.episodic_buffer],
+        }
+        snapshot_name = f"{Path(memory_name).stem}_episodes"
+        self._get_long_term_memory().store_memory_snapshot(snapshot_name, episode_snapshot)
 
     def _load_checkpoint(self, filepath):
         kwargs = {}
@@ -85,5 +100,16 @@ class MemoryManager:
             raise ValueError("Número de camadas do checkpoint não corresponde ao engine.")
         for synapse_layer, restored_weights in zip(self.engine.synapses, restored_layers):
             synapse_layer.sparse_weights = restored_weights
+        snapshot_name = f"{Path(memory_name).stem}_episodes"
+        try:
+            episode_snapshot = self._get_long_term_memory().load_memory_snapshot(snapshot_name)
+        except FileNotFoundError:
+            # Checkpoints criados antes da persistência episódica continuam válidos.
+            episode_snapshot = None
+        if episode_snapshot is not None:
+            episodes = episode_snapshot.get("episodic_buffer") if isinstance(episode_snapshot, dict) else None
+            if not isinstance(episodes, list):
+                raise ValueError("Snapshot episódico de longo prazo possui formato inválido.")
+            self.episodic_buffer = episodes[-self.max_buffer_size:]
         print(f"[Memória] Engrama {memory_name} recuperado e associado à rede com sucesso!")
         return True

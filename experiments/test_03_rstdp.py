@@ -22,6 +22,17 @@ def run_neurocore_01_experiment():
     # Pesos sinapticos iniciais
     W1 = torch.randn(hidden_dim, input_dim) * 0.1
     W2 = torch.randn(output_dim, hidden_dim) * 0.1
+
+    # A API R-STDP recebe coordenadas [post, pre] das sinapses existentes.
+    # Estas matrizes são densas, portanto todas as conexões são representadas.
+    def dense_sparse_indices(num_posts, num_pres):
+        post_idx, pre_idx = torch.meshgrid(
+            torch.arange(num_posts), torch.arange(num_pres), indexing="ij"
+        )
+        return torch.stack((post_idx.reshape(-1), pre_idx.reshape(-1)))
+
+    indices_w1 = dense_sparse_indices(hidden_dim, input_dim)
+    indices_w2 = dense_sparse_indices(output_dim, hidden_dim)
     
     # Instanciando R-STDP para W1 e W2
     rstdp_w1 = RSTDPManager(num_posts=hidden_dim, num_pres=input_dim, lr=0.05)
@@ -54,8 +65,8 @@ def run_neurocore_01_experiment():
             spk_motor, mem_motor = motor_layer(m_input)
             
             # 1. Acumular elegibilidade sinaptica a cada passo (sem mudar peso ainda)
-            rstdp_w1.step_eligibility(spk_sensory, spk_hidden)
-            rstdp_w2.step_eligibility(spk_hidden, spk_motor)
+            rstdp_w1.step_eligibility(spk_sensory, spk_hidden, indices_w1)
+            rstdp_w2.step_eligibility(spk_hidden, spk_motor, indices_w2)
             
             # Decisao de acao baseada no potencial motor
             action_id = torch.argmax(mem_motor).item()
@@ -65,8 +76,10 @@ def run_neurocore_01_experiment():
             
             # 2. Se o agente encontrou a meta, disparar o sinal global de recompensa (Dopamina)
             if reward > 0:
-                W1 = rstdp_w1.apply_reward_modulation(W1, reward)
-                W2 = rstdp_w2.apply_reward_modulation(W2, reward)
+                delta_w1 = rstdp_w1.apply_reward_modulation(reward, indices_w1)
+                delta_w2 = rstdp_w2.apply_reward_modulation(reward, indices_w2)
+                W1[indices_w1[0], indices_w1[1]] += delta_w1
+                W2[indices_w2[0], indices_w2[1]] += delta_w2
                 total_goals_reached += 1
             
             episode_reward += reward

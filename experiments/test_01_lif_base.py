@@ -9,6 +9,7 @@ from environment.world import VirtualWorld2D
 # =====================================================================
 def run_lif_membrane_test():
     print("Iniciando Teste Dinâmico de Membrana (LIF)...")
+    torch.manual_seed(42)
     
     # Inicializa 1 neurônio com limiar de 1.0 e retenção de 0.9 (90%)
     lif = LeakyIntegrateAndFire(num_neurons=1, threshold=1.0, decay=0.9)
@@ -16,27 +17,44 @@ def run_lif_membrane_test():
     print("\n--- Fase 1: Acumulação e Disparo ---")
     corrente = torch.tensor([0.4])
     
+    expected_mem = [0.4, 0.76, 0.0, 0.4, 0.76]
+    expected_spikes = [0.0, 0.0, 1.0, 0.0, 0.0]
     for step in range(1, 6):
         spike, mem = lif(corrente)
+        assert abs(mem.item() - expected_mem[step - 1]) < 1e-5, (
+            f"Potencial incorreto no passo {step}: {mem.item():.6f}"
+        )
+        assert spike.item() == expected_spikes[step - 1], (
+            f"Resposta de spike incorreta no passo {step}: {spike.item()}"
+        )
         estado = "🔥 DISPARO e Reset!" if spike.item() > 0 else "Acumulando..."
         print(f"Passo {step} | Corrente: 0.4 | Voltagem: {mem.item():.4f} | {estado}")
 
     print("\n--- Fase 2: Decaimento (Leak) ---")
     sem_corrente = torch.tensor([0.0])
+    expected_leak = [0.684, 0.6156, 0.55404]
     for step in range(6, 9):
         spike, mem = lif(sem_corrente)
+        assert spike.item() == 0.0, f"Spike inesperado durante vazamento no passo {step}"
+        assert abs(mem.item() - expected_leak[step - 6]) < 1e-5, (
+            f"Decaimento incorreto no passo {step}: {mem.item():.6f}"
+        )
         print(f"Passo {step} | Corrente: 0.0 | Voltagem: {mem.item():.4f} | Vazamento")
 
     print("\n--- Fase 3: Reset Manual ---")
     lif.reset_state()
+    assert torch.count_nonzero(lif.mem).item() == 0, "reset_state() não zerou a membrana"
     print(f"Após lif.reset_state() | Voltagem: {lif.mem.item():.4f}\n")
+    print("[PASS] Disparo, leak e reset do LIF verificados por asserts.")
 
 
 # =====================================================================
 # 2. EXPERIMENTO PRINCIPAL: APRENDIZADO NO AMBIENTE VIRTUAL
 # =====================================================================
 def run_neurocore_01_experiment():
-    print("Iniciando NeuroCore 0.1 - Experimento de Aprendizado Autonomo...")
+    print("Iniciando NeuroCore 0.1 - Simulação base no ambiente (sem plasticidade)...")
+    torch.manual_seed(42)
+    np.random.seed(42)
     
     world = VirtualWorld2D()
     

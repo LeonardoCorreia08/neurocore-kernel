@@ -1,51 +1,56 @@
-'''Modulo: test_09_memory_modules.py'''
+'''Teste 09: retenção de um padrão em uma rede recorrente associativa.'''
 import torch
+
 from core.neuron import LeakyIntegrateAndFire
 
+
 def run_memory_test():
-    print("Iniciando Teste do Módulo de Memória Associativa (NeuroCore)...")
-    
+    print("Iniciando Teste de Retenção da Memória Associativa (NeuroCore)...")
+    torch.manual_seed(42)
+
     num_neurons = 100
-    
-    # CORREÇÃO 1: Fator de decaimento (decay) aumentado para 0.95 (retém mais energia no tempo)
-    # e limiar (threshold) levemente ajustado para facilitar a reverberação.
-    memory_layer = LeakyIntegrateAndFire(num_neurons=num_neurons)
-    
-    # CORREÇÃO 2: Amplificação dos pesos recorrentes (auto-associativos).
-    # Multiplicamos por 0.8 (ou mais) para garantir que um spike gere excitação suficiente nos vizinhos.
-    W_recurrent = torch.randn(num_neurons, num_neurons) * 0.8 
-    W_recurrent.fill_diagonal_(0.0) # Zera a diagonal para evitar auto-excitação infinita (feedback loop quebrado)
-    
-    # Criação de um padrão (estímulo original)
-    input_pattern = (torch.rand(num_neurons) > 0.8).float()
-    spikes_originais = input_pattern.sum().item()
-    print(f"[Gravação] Padrão original inserido: {spikes_originais:.0f} spikes ativos.")
-    
-    # Passo 1: Apresenta o padrão (Injeção de corrente)
-    recovered_spikes, _ = memory_layer(input_pattern * 2.0) # Força a ativação inicial
-    
-    print("[Recuperação] Iniciando ciclos recorrentes (sem estímulo externo)...")
-    
-    # Passo 2: Recuperação (A rede tenta sustentar/recuperar o padrão apenas com suas conexões laterais)
+    num_active = 20
+    threshold = 1.0
+    memory_layer = LeakyIntegrateAndFire(
+        num_neurons=num_neurons,
+        threshold=threshold,
+        decay=0.95,
+    )
+
+    # Padrão determinístico de 20 bits, para tornar o teste reproduzível.
+    input_pattern = torch.zeros(num_neurons, dtype=torch.float32)
+    input_pattern[:num_active] = 1.0
+    print(f"[Gravação] Padrão original: {int(input_pattern.sum().item())} neurônios ativos.")
+
+    # Regra Hebbiana simples para armazenar este padrão. A normalização garante
+    # corrente > threshold para cada neurônio ativo quando o padrão é reaplicado.
+    recurrent_weights = torch.outer(input_pattern, input_pattern) * (1.1 / (num_active - 1))
+    recurrent_weights.fill_diagonal_(0.0)
+
+    recalled, _ = memory_layer(input_pattern * 2.0)
+    assert torch.equal(recalled, input_pattern), "A codificação inicial não reproduziu o padrão apresentado."
+
+    print("[Recuperação] Cinco ciclos recorrentes sem estímulo externo...")
+    exact_matches = 0
     for step in range(5):
-        # A entrada agora é puramente a reverberação da matriz de memória
-        recurrent_input = torch.matmul(W_recurrent, recovered_spikes)
-        
-        # Atualiza os neurônios
-        recovered_spikes, mem = memory_layer(recurrent_input)
-        
-        ativos = recovered_spikes.sum().item()
-        print(f"  -> Ciclo {step+1}: {ativos:.0f} spikes recuperados")
-        
-        if ativos == 0:
-            print("  [Aviso] O vetor colapsou para zero prematuramente.")
-            break
-            
+        recurrent_current = recurrent_weights @ recalled
+        recalled, _ = memory_layer(recurrent_current)
+        exact = torch.equal(recalled, input_pattern)
+        exact_matches += int(exact)
+        overlap = int(torch.logical_and(recalled.bool(), input_pattern.bool()).sum().item())
+        false_positives = int(torch.logical_and(recalled.bool(), ~input_pattern.bool()).sum().item())
+        print(
+            f"  -> Ciclo {step + 1}: sobreposição={overlap}/{num_active}, "
+            f"falsos positivos={false_positives}, padrão exato={'sim' if exact else 'não'}"
+        )
+
+    success = exact_matches == 5 and torch.equal(recalled, input_pattern)
     print("\n[Resultados - Teste 09]")
-    if recovered_spikes.sum() > 0:
-        print(f"[Sucesso Absoluto] O vetor final tem {recovered_spikes.sum().item():.0f} spikes! A rede reteve a memória.")
-    else:
-        print("[Falha] Vetor zerado.")
+    print(f"Ciclos com recuperação exata: {exact_matches}/5")
+    if not success:
+        raise AssertionError("A rede não reteve e recuperou o padrão armazenado em todos os ciclos.")
+    print("[PASS] O padrão armazenado foi mantido exatamente nos cinco ciclos de recuperação.")
+
 
 if __name__ == "__main__":
     run_memory_test()

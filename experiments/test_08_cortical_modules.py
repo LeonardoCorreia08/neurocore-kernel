@@ -14,10 +14,11 @@ def run_cortical_test():
     print("Iniciando Teste Integrado dos Subsistemas Corticais (NeuroCore)...")
     
     config = load_brain_config()
-    target_neurons = config["scale"]["target_neurons"]
-    density = config["scale"]["connectivity_density"]
+    # A escala desse experimento foi preservada no namespace de migração.
+    target_neurons = config["legacy"]["scale"]["target_neurons"]
+    density = config["legacy"]["scale"]["connectivity_density"]
     
-    world = VirtualWorld2D()
+    world = VirtualWorld2D(config=config)
     
     # Dimensoes
     input_dim = 4
@@ -26,15 +27,21 @@ def run_cortical_test():
     output_dim = 4
     
     # Instanciar subsistemas corticais
-    sensory_layer = LeakyIntegrateAndFire(num_neurons=input_dim)
-    attention_engine = AttentionEngine(dim=input_dim)
-    associative_cortex = AssociativeCortex(input_dims=[input_dim, output_dim], hidden_dim=associative_dim)
-    hidden_layer = LeakyIntegrateAndFire(num_neurons=hidden_dim)
-    decision_engine = DecisionEngine(num_choices=output_dim)
-    motor_engine = MotorEngine()
+    sensory_layer = LeakyIntegrateAndFire(num_neurons=input_dim, config=config)
+    attention_engine = AttentionEngine(dim=input_dim, config=config)
+    associative_cortex = AssociativeCortex(
+        input_dims=[input_dim, output_dim], hidden_dim=associative_dim, config=config
+    )
+    hidden_layer = LeakyIntegrateAndFire(num_neurons=hidden_dim, config=config)
+    decision_engine = DecisionEngine(num_choices=output_dim, config=config)
+    motor_engine = MotorEngine(config=config)
     
-    synapse_w1 = SparseSynapseManager(num_posts=hidden_dim, num_pres=associative_dim, density=density)
-    synapse_w2 = SparseSynapseManager(num_posts=output_dim, num_pres=hidden_dim, density=density)
+    synapse_w1 = SparseSynapseManager(
+        num_posts=hidden_dim, num_pres=associative_dim, density=density, config=config
+    )
+    synapse_w2 = SparseSynapseManager(
+        num_posts=output_dim, num_pres=hidden_dim, density=density, config=config
+    )
 
     print("Rodando ciclo de teste de integracao de 20 passos na arena...")
     sensors = world.reset()

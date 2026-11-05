@@ -1,0 +1,32 @@
+{
+  "test": "17_homeostasis_recovery",
+  "seed": 17,
+  "status": "PASS",
+  "checks": {
+    "quiet_activity_low": true,
+    "homeostasis_reduces_excess_activity": true,
+    "threshold_increases_during_overactivity": true,
+    "activity_recovers_after_stimulus_removed": true,
+    "post_recovery_activity_is_stable": true,
+    "threshold_stays_within_configured_bounds": true
+  },
+  "metrics": {
+    "rest_firing_rate": 0.0,
+    "stimulus_rate_first_40_steps": 0.675,
+    "stimulus_rate_last_40_steps": 0.15,
+    "recovery_rate_last_50_steps": 0.0,
+    "stable_rate_last_100_steps": 0.0,
+    "threshold_before_stimulus": 0.5000004768371582,
+    "threshold_after_stimulus": 3.2639758586883545,
+    "threshold_after_recovery": 1.9028072357177734,
+    "threshold_bounds_observed": [
+      1.9028072357177734,
+      1.9028072357177734
+    ],
+    "excitatory_inhibitory_balance": "not_implemented_in_tested_architecture"
+  },
+  "limitations": [
+    "Este teste exercita LIF + HomeostasisManager, não a propagação em uma rede multicamada.",
+    "A arquitetura disponível não declara populações E/I explícitas; essa métrica não foi avaliada."
+  ]
+}

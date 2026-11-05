@@ -29,7 +29,7 @@ def run_dynamic_1m_test():
     telemetry.start_measurement()
     
     total_spikes_registered = 0
-    time_steps = 1000  # Reduzido para 50 passos pesados para viabilizar o tempo de execução local de teste, mantendo carga de 1M
+    time_steps = 1000
     
     for t in range(time_steps):
         # Estímulo dinâmico variável no tempo
@@ -52,7 +52,10 @@ def run_dynamic_1m_test():
     print("\n--- Relatório de Validação Dinâmica e Hardware (1M) ---")
     print(f"Passos executados: {time_steps}")
     print(f"Tempo total de simulação: {metrics['elapsed_seconds']:.2f} segundos")
-    print(f"Consumo energético real medido: {metrics['energy_joules']:.6f} Joules")
+    if telemetry.initialized:
+        print(f"Consumo energético reportado por NVML: {metrics['energy_joules']:.6f} Joules")
+    else:
+        print("Consumo energético: indisponível (NVML não inicializado)")
     print(f"Média de spikes ativos por passo: {total_spikes_registered / time_steps:,.0f}")
     print("Validação dinâmica de 1 milhão de neurônios concluída com sucesso!")
 

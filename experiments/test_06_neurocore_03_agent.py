@@ -1,6 +1,5 @@
 '''Modulo: test_06_neurocore_03_agent.py'''
 import torch
-import numpy as np
 from core.config_loader import load_brain_config
 from core.neuron import LeakyIntegrateAndFire
 from core.sparse_network import SparseSynapseNetwork
@@ -11,12 +10,14 @@ def run_neurocore_03_agent():
     print("Iniciando NeuroCore 0.3 - Agente Autonomo com 10.000 Neuronios e R-STDP...")
     
     config = load_brain_config()
-    target_neurons = config["scale"]["target_neurons"] # 10000
-    density = config["scale"]["connectivity_density"]    # 0.15
+    # Os parâmetros da arquitetura original deste experimento foram migrados
+    # para legacy; a configuração canônica atual mantém rede e neurônio separados.
+    target_neurons = config["legacy"]["scale"]["target_neurons"]
+    density = config["legacy"]["scale"]["connectivity_density"]
     threshold = config["neuron"]["threshold"]
-    beta = config["neuron"]["beta"]
+    decay = config["neuron"]["decay"]
     
-    world = VirtualWorld2D()
+    world = VirtualWorld2D(config=config)
     
     # Camadas neurais na escala de grande porte
     # Para adaptar 10k neurônios ao espaço de 4 entradas e 4 saídas, 
@@ -25,9 +26,9 @@ def run_neurocore_03_agent():
     hidden_dim = target_neurons - 8  # ~9992 neurônios
     output_dim = 4
     
-    sensory_layer = LeakyIntegrateAndFire(num_neurons=input_dim, threshold=threshold, beta=beta)
-    hidden_layer = LeakyIntegrateAndFire(num_neurons=hidden_dim, threshold=threshold, beta=beta)
-    motor_layer = LeakyIntegrateAndFire(num_neurons=output_dim, threshold=threshold, beta=beta)
+    sensory_layer = LeakyIntegrateAndFire(num_neurons=input_dim, threshold=threshold, decay=decay, config=config)
+    hidden_layer = LeakyIntegrateAndFire(num_neurons=hidden_dim, threshold=threshold, decay=decay, config=config)
+    motor_layer = LeakyIntegrateAndFire(num_neurons=output_dim, threshold=threshold, decay=decay, config=config)
     
     print("Construindo redes de sinapses esparsas (W1: Sensorial -> Oculta, W2: Oculta -> Motora)...")
     # W1: matriz esparsa [hidden_dim x input_dim]
@@ -68,8 +69,10 @@ def run_neurocore_03_agent():
             spk_motor, mem_motor = motor_layer(m_input)
             
             # 4. Rastreamento de Elegibilidade R-STDP
-            rstdp_w1.step_eligibility(spk_sensory, spk_hidden)
-            rstdp_w2.step_eligibility(spk_hidden, spk_motor)
+            indices_w1 = synapse_w1.sparse_weights.coalesce().indices()
+            indices_w2 = synapse_w2.sparse_weights.coalesce().indices()
+            rstdp_w1.step_eligibility(spk_sensory, spk_hidden, indices_w1)
+            rstdp_w2.step_eligibility(spk_hidden, spk_motor, indices_w2)
             
             # 5. Decisao de Acao
             action_id = torch.argmax(mem_motor).item()
@@ -78,11 +81,11 @@ def run_neurocore_03_agent():
             # 6. Modulacao por Recompensa (Dopamina Global)
             if reward > 0:
                 # Atualizar valores na matriz esparsa com base na elegibilidade modulada
-                delta_w1 = rstdp_w1.lr * reward * rstdp_w1.eligibility_trace
-                delta_w2 = rstdp_w2.lr * reward * rstdp_w2.eligibility_trace
-                
-                synapse_w1.update_sparse_weights(delta_w1.values() if delta_w1.is_sparse else delta_w1)
-                synapse_w2.update_sparse_weights(delta_w2.values() if delta_w2.is_sparse else delta_w2)
+                delta_w1 = rstdp_w1.apply_reward_modulation(reward, indices_w1)
+                delta_w2 = rstdp_w2.apply_reward_modulation(reward, indices_w2)
+
+                synapse_w1.update_sparse_weights(delta_w1)
+                synapse_w2.update_sparse_weights(delta_w2)
                 
                 total_goals_reached += 1
             

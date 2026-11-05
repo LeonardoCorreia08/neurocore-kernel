@@ -13,8 +13,8 @@ def run_scale_1m_test():
     density = 0.01  # Densidade otimizada de 1% para suportar escala massiva sem estouro de RAM/VRAM
     
     input_dim = 5000
-    hidden_dim = target_neurons - 7000
     output_dim = 2000
+    hidden_dim = target_neurons - input_dim - output_dim
     
     print(f"[Architecture] Alocando populações neurais massivas: {target_neurons:,} neurônios...")
     start_time = time.time()

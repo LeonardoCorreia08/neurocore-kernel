@@ -107,52 +107,10 @@ A presença de uma tecnologia nesta lista não confirma que todos os módulos j�
 
 ```text
 .
-neurocore/
-  ├── assets/
-  │   └── brain.png — Logotipo e diagrama da arquitetura do sistema.
-  ├── core/ — Núcleo Neural (Módulo 1):
-  │   ├── neuron.py — Implementação do modelo LIF e tipos funcionais.
-  │   ├── synapse.py — Pesos, atrasos, estados e matrizes esparsas.
-  │   ├── spike_engine.py — Motor de propagação de eventos e pulsos.
-  │   ├── neural_network.py — Montagem de populações e topologias.
-  │   └── simulation.py — Loop de passo de tempo ($\Delta t$) da simulação.
-  ├── brain/ — Subsistemas Corticais (Módulos 2 e 4):
-  │   ├── sensory_cortex.py — Processamento sensorial primário.
-  │   ├── associative_cortex.py — Integração multimodal de sinais.
-  │   ├── memory_engine.py — Controlador central de memória.
-  │   ├── attention_engine.py — Filtro de relevância e foco neural.
-  │   ├── decision_engine.py — Seleção competitiva de ações.
-  │   └── motor_engine.py — Disparo de comandos para o ambiente.
-  ├── learning/ — Motor de Aprendizagem (Módulo 3):
-  │   ├── stdp.py — Regras locais de STDP exponencial.
-  │   ├── homeostasis.py — Regulação de limiar e estabilidade.
-  │   ├── reward_learning.py — Modulação sináptica por recompensa.
-  │   └── continual_learning.py — Consolidação e proteção de pesos.
-  ├── perception/ — Codificadores de Entrada:
-  │   ├── vision.py — Conversão de quadros/eventos visuais em *spikes*.
-  │   ├── audio.py — Conversão de frequências sonoras em *spikes*.
-  │   └── sensor_encoder.py — Codificação temporal e por taxa (*rate/temporal coding*).
-  ├── memory/ — Camadas de Armazenamento:
-  │   ├── short_term.py — Buffers recorrentes de atividade.
-  │   ├── long_term.py — Persistência estrutural de pesos.
-  │   ├── associative.py — Grafos e matrizes de correlação.
-  │   └── consolidation.py — Rotinas de reforço e esquecimento.
-  ├── environment/ — Simulador Interativo:
-  │   ├── world.py — Grade espacial com paredes, objetos e metas.
-  │   ├── simulator.py — Física simplificada e ciclo de interação do agente.
-  │   └── rewards.py — Cálculo de sinais de recompensa e penalidade.
-  ├── monitoring/ — Avaliação e Telemetria (Módulo 5):
-  │   ├── spike_visualizer.py — Gráficos de disparo (*raster plots*).
-  │   ├── activity_monitor.py — Monitoramento de frequência e homeostase.
-  │   └── performance.py — Cálculo de métricas científicas e custo energético.
-  ├── experiments/ — Bateria de Testes:
-  │   ├── neuron_test.py — Validação isolada de neurónios LIF.
-  │   ├── memory_test.py — Testes de retenção e reativação de padrões.
-  │   └── learning_test.py — Execução do experimento *NeuroCore 0.1*.
-  ├── config/
-  │   └── brain_config.yaml — Hiperparâmetros da rede ($V_{rest}, \tau_m, A_+, A_-$).
-  ├── main.py — Ponto de entrada principal da plataforma.
-  └── requirements.txt — Lista de pacotes e dependências Python.
+├── README.md
+├── architecture.md
+├── experiments_log.md
+└── math_models.md
 ```
 
 O arquivo `experiments_log.md` documenta os resultados dos testes. Confirme se todos os arquivos e diretórios citados existem na sua cópia do repositório.
@@ -195,6 +153,8 @@ python -m experiments.test_13_scale_1m
 python -m experiments.test_14_generate_plots
 python -m experiments.test_15_generalization
 python -m experiments.test_16_dynamic_1m
+python -m experiments.test_17_homeostasis_recovery
+python -m experiments.test_18_learning_retention
 ```
 
 Execute apenas os comandos correspondentes aos arquivos existentes na sua cópia do repositório. Os nomes de módulos registrados nos logs não garantem que esses arquivos estejam presentes na versão atual.

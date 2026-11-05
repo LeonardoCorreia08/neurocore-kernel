@@ -26,7 +26,18 @@ def run_neurocore_02_experiment():
     W1 = torch.randn(hidden_dim, input_dim) * 0.5
     W2 = torch.randn(output_dim, hidden_dim) * 0.5
     W_mem = torch.randn(hidden_dim, hidden_dim) * 0.2  # Conexoes recorrentes de memoria
-    
+
+    # A API R-STDP recebe coordenadas [post, pre] das conexoes existentes.
+    # Como W1/W2 sao densas, todas as conexoes sao representadas.
+    def dense_sparse_indices(num_posts, num_pres):
+        post_idx, pre_idx = torch.meshgrid(
+            torch.arange(num_posts), torch.arange(num_pres), indexing="ij"
+        )
+        return torch.stack((post_idx.reshape(-1), pre_idx.reshape(-1)))
+
+    indices_w1 = dense_sparse_indices(hidden_dim, input_dim)
+    indices_w2 = dense_sparse_indices(output_dim, hidden_dim)
+
     rstdp_w1 = RSTDPManager(num_posts=hidden_dim, num_pres=input_dim, lr=0.05)
     rstdp_w2 = RSTDPManager(num_posts=output_dim, num_pres=hidden_dim, lr=0.05)
 
@@ -66,15 +77,17 @@ def run_neurocore_02_experiment():
             m_input = torch.matmul(W2, spk_hidden)
             spk_motor, mem_motor = motor_layer(m_input)
             
-            rstdp_w1.step_eligibility(spk_sensory, spk_hidden)
-            rstdp_w2.step_eligibility(spk_hidden, spk_motor)
+            rstdp_w1.step_eligibility(spk_sensory, spk_hidden, indices_w1)
+            rstdp_w2.step_eligibility(spk_hidden, spk_motor, indices_w2)
             
             action_id = torch.argmax(mem_motor).item()
             sensors, reward, done = world.step(action_id)
             
             if reward > 0:
-                W1 = rstdp_w1.apply_reward_modulation(W1, reward)
-                W2 = rstdp_w2.apply_reward_modulation(W2, reward)
+                delta_w1 = rstdp_w1.apply_reward_modulation(reward, indices_w1)
+                delta_w2 = rstdp_w2.apply_reward_modulation(reward, indices_w2)
+                W1[indices_w1[0], indices_w1[1]] += delta_w1
+                W2[indices_w2[0], indices_w2[1]] += delta_w2
                 total_goals_reached += 1
             
             steps += 1

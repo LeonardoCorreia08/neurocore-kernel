@@ -1,89 +1,109 @@
-'''Modulo: test_15_generalization.py'''
+'''Teste 15: resposta neural sob mudança de domínio (não mede sucesso em tarefa).'''
+import math
 import torch
-import random
+
 from core.neuron import LeakyIntegrateAndFire
 from core.synapse import SparseSynapseManager
+from learning.stdp import STDPManager
 from monitoring.experiment_logger import ExperimentLogger
 
+
+def _input_signal(input_dim: int, shifted: bool) -> torch.Tensor:
+    """Gera estímulos binários no domínio A ou com ruído/deslocamento no domínio B."""
+    if not shifted:
+        return (torch.rand(input_dim) > 0.8).float()
+    noise = torch.rand(input_dim) * 0.4
+    return ((torch.rand(input_dim) > 0.75).float() + noise).clamp(0.0, 1.0)
+
+
+def _measure_activity(sensory, hidden, synapse, episodes: int, steps: int, shifted: bool) -> float:
+    rates = []
+    for _ in range(episodes):
+        sensory.reset_state()
+        hidden.reset_state()
+        episode_rates = []
+        for _ in range(steps):
+            signal = _input_signal(sensory.num_neurons, shifted)
+            spikes_in, _ = sensory(signal)
+            current = synapse.forward_propagation(spikes_in)
+            spikes_hidden, _ = hidden(current)
+            episode_rates.append(float(spikes_hidden.float().mean().item()))
+        rates.append(sum(episode_rates) / len(episode_rates))
+    return sum(rates) / len(rates)
+
+
 def run_generalization_test():
-    print("Iniciando Experimento de Generalização e Transferência de Aprendizado...")
-    
-    # --- 1. CONFIGURAÇÃO E LOGGER ---
+    print("Iniciando Teste 15: atividade neural sob mudança de domínio...")
+
     input_dim = 100
     hidden_dim = 500
-    output_dim = 20
-    episodes_a = 20
-    episodes_b = 20
-    
-    config = {
+    episodes_train = 20
+    episodes_eval = 20
+    steps_per_episode = 200
+    density = 0.1
+    seed = 42
+
+    ExperimentLogger.set_seed(seed)
+    params = {
         "input_dim": input_dim,
         "hidden_dim": hidden_dim,
-        "output_dim": output_dim,
-        "density": 0.1,
-        "episodes_treino": episodes_a,
-        "episodes_teste": episodes_b
+        "density": density,
+        "episodes_train": episodes_train,
+        "episodes_eval": episodes_eval,
+        "steps_per_episode": steps_per_episode,
+        "measurement": "hidden firing fraction; not task success",
     }
-    
-    seed = 42
-    ExperimentLogger.set_seed(seed)
     ExperimentLogger.save_experiment_log(
-        experiment_name="test_15_generalization",
-        params=config,
-        seed=seed
+        experiment_name="test_15_domain_shift_activity",
+        params=params,
+        seed=seed,
     )
-    # --------------------------------
-    
+
     sensory = LeakyIntegrateAndFire(num_neurons=input_dim)
     hidden = LeakyIntegrateAndFire(num_neurons=hidden_dim)
-    motor = LeakyIntegrateAndFire(num_neurons=output_dim)
-    
-    synapse = SparseSynapseManager(num_posts=hidden_dim, num_pres=input_dim, density=0.1)
-    
-    # Fase 1: Treinamento em Ambiente Padrão (Mapa A)
-    print("[Training] Executando adaptação sináptica no Ambiente A...")
-    metas_map_a = 0
-    
-    for episode in range(episodes_a):
-        passos = 200
-        # Simula episódios de treino com convergência progressiva
-        for t in range(passos):
-            input_signal = (torch.rand(input_dim) > 0.8).float()
-            spk_in, _ = sensory(input_signal)
-            h_in = synapse.forward_propagation(spk_in)
-            spk_hid, _ = hidden(h_in)
-            
-            # Condição simulada de alcance de meta no Ambiente A
-            if t < 15 and episode > 5:
-                metas_map_a += 1
-                break
+    synapse = SparseSynapseManager(
+        num_posts=hidden_dim,
+        num_pres=input_dim,
+        density=density,
+    )
+    stdp = STDPManager(num_posts=hidden_dim, num_pres=input_dim)
+    stdp.reset_traces()
 
-    eficiencia_a = (metas_map_a / episodes_a) * 100
-    print(f"[Training] Concluído no Ambiente A. Eficiência de Metas: {eficiencia_a:.1f}%")
+    print("[Treino] Exposição STDP não supervisionada a estímulos do domínio A...")
+    for _ in range(episodes_train):
+        sensory.reset_state()
+        hidden.reset_state()
+        for _ in range(steps_per_episode):
+            signal = _input_signal(input_dim, shifted=False)
+            spikes_in, _ = sensory(signal)
+            current = synapse.forward_propagation(spikes_in)
+            spikes_hidden, _ = hidden(current)
+            delta = stdp.compute_sparse_deltas(
+                spikes_in,
+                spikes_hidden,
+                synapse.sparse_weights.coalesce().indices(),
+            )
+            synapse.update_sparse_weights(delta)
 
-    # Fase 2: Teste de Transferência em Ambiente Inédito (Mapa B - Procedural com ruído de domínio)
-    print("[Generalization] Avaliando transferência zero-shot para Ambiente B (Inédito/Gerado Proceduralmente)...")
-    metas_map_b = 0
-    
-    # Congela ou mantém os pesos aprendidos e testa a robustez frente a perturbações severas
-    for episode in range(episodes_b):
-        passos = 200
-        for t in range(passos):
-            # Introduz ruído de transição de domínio e variação procedural severa na entrada
-            procedural_noise = torch.rand(input_dim) * 0.4
-            input_signal = ((torch.rand(input_dim) > 0.75).float() + procedural_noise).clamp(0, 1)
-            
-            spk_in, _ = sensory(input_signal)
-            h_in = synapse.forward_propagation(spk_in)
-            spk_hid, _ = hidden(h_in)
-            
-            # Critério de sucesso adaptativo para ambiente inédito (menor limiar devido à mudança de domínio)
-            if t < 35 and spk_hid.sum() > 30:
-                metas_map_b += 1
-                break
+    print("[Avaliação] Pesos congelados; comparando os domínios A e B...")
+    activity_a = _measure_activity(
+        sensory, hidden, synapse, episodes_eval, steps_per_episode, shifted=False
+    )
+    activity_b = _measure_activity(
+        sensory, hidden, synapse, episodes_eval, steps_per_episode, shifted=True
+    )
+    if not (math.isfinite(activity_a) and math.isfinite(activity_b)):
+        raise RuntimeError("A atividade neural avaliada contém valor não finito.")
 
-    generalization_rate = (metas_map_b / episodes_b) * 100
-    print(f"[Generalization Result] Taxa de Sucesso em Ambiente Inédito (Zero-Shot): {generalization_rate:.1f}%")
-    print("Teste de Generalização Cognitiva e Transferência Real concluído com sucesso!")
+    absolute_shift = abs(activity_b - activity_a)
+    print(f"[Métrica A] Fração média de neurônios ocultos ativos por passo: {activity_a:.6f}")
+    print(f"[Métrica B] Fração média de neurônios ocultos ativos por passo: {activity_b:.6f}")
+    print(f"[Diferença absoluta de atividade] {absolute_shift:.6f}")
+    print(
+        "O teste mede resposta neural a uma mudança de distribuição; "
+        "não mede alcance de metas nem comprova generalização de tarefa."
+    )
+
 
 if __name__ == "__main__":
     run_generalization_test()
