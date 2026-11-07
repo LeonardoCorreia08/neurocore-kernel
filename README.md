@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
   <img src="Assets/brain.png" alt="NEUROCORE Architecture Banner" width="280" />
   <h1>NEUROCORE</h1>
   <p><strong>Networked Engine for Unified Reasoning and Cognitive Operations</strong></p>
@@ -14,179 +14,326 @@
 
 ---
 
-# NEUROCORE
-
-**Networked Engine for Unified Reasoning and Cognitive Operations**
-
-Arquitetura experimental de inteligência artificial baseada em redes neurais pulsantes (*Spiking Neural Networks*, SNN).
 
 ## 1. Visão geral
 
-O NEUROCORE é um projeto de pesquisa e desenvolvimento de uma arquitetura neural pulsante. O sistema usa neurônios artificiais, sinapses esparsas e aprendizado baseado no tempo dos disparos.
+O NEUROCORE é um projeto experimental de pesquisa e desenvolvimento voltado à exploração de arquiteturas computacionais inspiradas em princípios do funcionamento neural biológico.
 
-O projeto busca executar estas funções:
+A proposta consiste em investigar como mecanismos de comunicação por pulsos, plasticidade sináptica, memória associativa e adaptação neural podem ser combinados em uma arquitetura computacional orientada a processos cognitivos.
 
-- Receber estímulos.
-- Converter estímulos em pulsos neurais.
-- Propagar pulsos pela rede.
-- Associar padrões.
-- Armazenar estados e pesos.
-- Adaptar conexões com regras de plasticidade.
-- Selecionar ações em um ambiente simulado.
-- Medir atividade e desempenho.
+O projeto parte do estudo das Spiking Neural Networks (SNN), explorando uma abordagem na qual o processamento de informações acontece por meio de eventos neurais discretos, considerando o tempo dos disparos, a dinâmica das conexões e a interação entre populações neuronais.
 
-O núcleo de processamento usa redes neurais pulsantes (*Spiking Neural Networks*, SNN). O projeto não usa Transformers ou LLMs como núcleo de inteligência.
+A intenção é investigar uma arquitetura na qual processamento, associação, aprendizado e adaptação sejam construídos a partir de mecanismos neurais pulsantes.
 
-> **Estado do projeto:** os registros fornecidos documentam testes de módulos, simulações com 10 mil neurônios e testes de alocação e execução de ciclos com 100 mil e 1 milhão de neurônios. Esses resultados, isoladamente, não demonstram inteligência geral, capacidade cognitiva validada em escala de um milhão de neurônios nem eficiência energética comprovada por medições de hardware.
+**Estado do projeto:** Em desenvolvimento. A arquitetura, os mecanismos e as capacidades pretendidas ainda estão sujeitos a implementação, experimentação, revisão e validação.
 
-## 2. Arquitetura em resumo
+## 2. Motivação
 
-O sistema está organizado em cinco motores:
+Grande parte das arquiteturas modernas de inteligência artificial utiliza redes profundas, processamento matricial e modelos baseados em Transformers. O NEUROCORE parte de outra linha de investigação: explorar modelos computacionais inspirados na dinâmica dos sistemas nervosos biológicos.
 
-| Motor | Responsabilidade |
-|---|---|
-| Neural Engine | Simular neurônios LIF, sinapses e propagação de pulsos. |
-| Memory Engine | Armazenar estados e associar padrões. |
-| Learning Engine | Ajustar pesos com STDP, R-STDP e mecanismos homeostáticos. |
-| Cognitive Engine | Integrar sinais, manter atenção e selecionar ações. |
-| Evaluation Engine | Registrar atividade, desempenho e estimativas de custo. |
+A pesquisa busca compreender como mecanismos neurais locais podem contribuir para a construção de sistemas adaptativos, capazes de processar estímulos, modificar conexões, associar informações e desenvolver representações por meio da atividade neural.
 
-Os subsistemas funcionais incluem percepção, córtex sensorial, memória, aprendizado, cognição e ação motora.
+Entre as questões que motivam o projeto:
+* Como construir sistemas computacionais baseados em comunicação neural por pulsos?
+* Como utilizar a plasticidade sináptica para permitir adaptação?
+* Como investigar memória associativa?
+* Como integrar percepção, memória e aprendizado?
+* Como desenvolver mecanismos de processamento distribuído?
+* Quais são os limites de escalabilidade de arquiteturas baseadas em SNN?
+* Como avaliar a eficiência computacional e energética dessas arquiteturas?
 
-Consulte [architecture.md](architecture.md) para conhecer os componentes e o fluxo de dados.
+Essas questões representam direções de investigação, não capacidades já demonstradas pelo sistema.
 
-## 3. Resultados registrados
+## 3. Objetivos
 
-A tabela abaixo resume valores presentes nos logs fornecidos. Consulte [experiments_log.md](experiments_log.md) para detalhes, comandos e limitações de cada teste.
+O objetivo de longo prazo é explorar uma arquitetura neural experimental capaz de integrar diferentes mecanismos de processamento e adaptação.
 
-| Experimento | Resultado registrado |
-|---|---|
-| NeuroCore 0.1 — modelo base | 50 episódios; 6 metas atingidas acumuladas. |
-| NeuroCore 0.1 — STDP | 50 episódios; 6 metas atingidas. |
-| NeuroCore 0.1 — R-STDP | 50 episódios; 5 metas atingidas. |
-| NeuroCore 0.2 | 30 episódios; 1 meta atingida; raster plot indicado em `docs/spike_raster.png`. |
-| Rede de 10.000 neurônios | Construção da rede esparsa em 5,16 s; simulação de 50 passos em 17,5334 s; média de 4.585,72 spikes por passo. |
-| Agente NeuroCore 0.3 | 1 meta atingida em 10 episódios. |
-| NeuroCore 0.4 | 5 episódios de 80 passos; checkpoint salvo em `config/synapse_w1_checkpoint.pt`. |
-| Subsistemas corticais | Ciclo de integração de 20 passos; recompensas exibidas iguais a 0,0 nos passos registrados. |
-| Subsistemas de memória | Snapshot salvo e carregado; padrão `[0., 1., 0., 1.]` recuperado; 380 sinapses podadas e 1.416 ativas restantes. |
-| Módulos de percepção | Codificadores de sensor, visão e áudio produziram vetores de pulsos de teste. |
-| Monitoramento | 50 passos registrados; taxa de acerto de 80%; custo energético estimado de `0.00000047 J`. |
-| Escala de 100.000 neurônios | Alocação em 2,02 s; ciclo de teste em 197,90 ms; 24.341 spikes ativos. |
-| Escala de 1.000.000 de neurônios | Alocação em 29,87 s; ciclo de teste em 2.376,34 ms; 174.005 spikes ativos. |
-| Generalização | Eficiência registrada de 70% no Ambiente A e taxa de sucesso de 100% no Ambiente B, conforme o teste. |
-| Simulação dinâmica com 1 milhão de neurônios | Cabeçalho anuncia 1.000 passos, mas o relatório registra 50 passos; tempo total de 50,28 s. |
+As principais áreas de investigação incluem:
+* Processamento de estímulos por codificação neural.
+* Comunicação entre populações de neurônios artificiais.
+* Formação e recuperação de padrões associativos.
+* Aprendizado por plasticidade sináptica.
+* Adaptação baseada em experiência.
+* Integração de diferentes fontes de informação.
+* Desenvolvimento de mecanismos de seleção de respostas.
+* Avaliação de escalabilidade e desempenho computacional.
 
-Os números são os valores impressos pelos testes disponibilizados. Eles não devem ser interpretados como resultados reproduzidos de forma independente. Os custos energéticos impressos pelos módulos são estimativas, salvo indicação expressa de medição; o log dinâmico registra `0.000000 Joules`, valor que não comprova consumo físico nulo.
+## 4. Fundamentos científicos
 
-## 4. Modelos matemáticos
+A arquitetura considera conceitos fundamentais da computação neuromórfica e das redes neurais pulsantes.
 
-O modelo neuronal de referência é o **Leaky Integrate-and-Fire (LIF)**.
+| Conceito | Aplicação investigada |
+| :--- | :--- |
+| **Spiking Neural Networks** | Base da arquitetura neural. |
+| **Leaky Integrate-and-Fire** | Modelagem de neurônios artificiais. |
+| **Spike-Timing-Dependent Plasticity** | Aprendizado dependente do tempo dos disparos. |
+| **Reward-Modulated STDP** | Aprendizado modulado por recompensa. |
+| **Synaptic Plasticity** | Adaptação das conexões neurais. |
+| **Homeostasis** | Estabilidade da atividade neural. |
+| **Associative Memory** | Armazenamento e recuperação de padrões. |
+| **Sparse Connectivity** | Conectividade neural esparsa. |
+| **Lateral Inhibition** | Competição entre populações neuronais. |
+| **Neuromodulation** | Investigação de mecanismos de modulação do aprendizado. |
 
-O aprendizado local usa **Spike-Timing-Dependent Plasticity (STDP)**. Os experimentos também incluem uma variante de aprendizado modulada por recompensa (R-STDP).
+A implementação desses mecanismos ocorrerá progressivamente, conforme a evolução dos experimentos.
 
-Consulte [math_models.md](math_models.md) para ver as equações e as definições dos parâmetros.
+## 5. Arquitetura conceitual
 
-## 5. Tecnologias registradas no projeto
+A organização inicial do NEUROCORE considera cinco áreas principais de desenvolvimento. Essa divisão representa uma proposta arquitetural e poderá ser modificada conforme os resultados da pesquisa.
 
-| Tecnologia | Uso previsto ou registrado |
-|---|---|
-| Python 3.10+ | Linguagem principal declarada pelo projeto. |
-| PyTorch | Tensores e matrizes esparsas, conforme os logs. |
-| snnTorch | Prototipagem de componentes SNN; confirmar uso no código. |
-| Brian2 | Simulação neural detalhada; confirmar uso no código. |
-| NumPy | Operações numéricas; confirmar dependências e uso. |
-| CUDA | Aceleração em GPU NVIDIA; confirmar configuração efetiva do ambiente. |
-| Matplotlib | Geração de gráficos, conforme os logs. |
-| HDF5 | Persistência de dados prevista; confirmar implementação. |
-| Intel Lava | Integração neuromórfica futura. |
+### 5.1 Neural Engine
+Responsável pela investigação dos mecanismos fundamentais de processamento neural.
+**Possíveis responsabilidades:**
+* Modelagem de neurônios artificiais.
+* Simulação de disparos neurais.
+* Representação de potenciais de membrana.
+* Conectividade sináptica.
+* Propagação de eventos neurais.
 
-A presença de uma tecnologia nesta lista não confirma que todos os módulos já a utilizam. Verifique o código e o arquivo de dependências antes de instalar ou executar o projeto.
+### 5.2 Memory Engine
+Área dedicada à investigação de mecanismos de memória associativa.
+**Possíveis responsabilidades:**
+* Associação de padrões.
+* Armazenamento de estados.
+* Recuperação de informações.
+* Persistência de conexões.
+* Avaliação de retenção e estabilidade.
 
-## 6. Estrutura de documentação
+### 5.3 Learning Engine
+Área destinada à investigação dos mecanismos de aprendizado e adaptação.
+**Possíveis responsabilidades:**
+* Plasticidade sináptica.
+* STDP e R-STDP.
+* Modulação por recompensa.
+* Ajuste de pesos.
+* Mecanismos homeostáticos.
+
+### 5.4 Cognitive Engine
+Área experimental destinada à integração dos mecanismos da arquitetura.
+**Possíveis responsabilidades:**
+* Integração de informações.
+* Associação entre estímulos e estados internos.
+* Exploração de mecanismos de atenção.
+* Seleção de respostas.
+* Coordenação entre subsistemas.
+
+### 5.5 Evaluation Engine
+Área destinada à instrumentação e avaliação experimental.
+**Possíveis responsabilidades:**
+* Monitoramento de atividade neural.
+* Coleta de métricas.
+* Avaliação de desempenho.
+* Análise de escalabilidade.
+* Registro de experimentos.
+* Reprodutibilidade dos resultados.
+
+## 6. Estado do desenvolvimento
+
+O NEUROCORE encontra-se em fase de pesquisa, construção e experimentação. Para manter a documentação transparente, o desenvolvimento utilizará três classificações:
+
+| Estado | Significado |
+| :--- | :--- |
+| **Implementado** | Componente existente no código-fonte. |
+| **Em desenvolvimento** | Componente cuja implementação está em andamento. |
+| **Planejado** | Funcionalidade prevista, ainda não implementada ou validada. |
+
+Os objetivos arquiteturais não devem ser confundidos com funcionalidades disponíveis. Experimentos, protótipos e resultados serão documentados separadamente.
+
+## 7. Roadmap
+
+O roadmap representa uma sequência inicial de desenvolvimento. As etapas não possuem prazos fixos e poderão ser reorganizadas conforme os resultados obtidos.
+
+**Fase 1 — Fundamentos e estruturação**
+* Consolidar os fundamentos matemáticos.
+* Definir modelos neuronais de referência.
+* Estruturar a organização inicial do projeto.
+* Definir padrões de documentação.
+* Preparar o ambiente de experimentação.
+
+**Fase 2 — Núcleo neural**
+* Desenvolver o modelo neuronal LIF.
+* Investigar conectividade sináptica.
+* Implementar propagação de spikes.
+* Avaliar configurações de redes esparsas.
+* Criar experimentos de validação.
+
+**Fase 3 — Aprendizado e plasticidade**
+* Investigar mecanismos STDP.
+* Explorar aprendizado modulado por recompensa.
+* Implementar mecanismos de adaptação sináptica.
+* Investigar mecanismos homeostáticos.
+* Avaliar estabilidade e retenção.
+
+**Fase 4 — Memória associativa**
+* Investigar mecanismos de associação.
+* Desenvolver experimentos de recuperação de padrões.
+* Avaliar resistência a ruído.
+* Investigar persistência de estados.
+* Avaliar retenção em diferentes condições.
+
+**Fase 5 — Integração dos subsistemas**
+* Integrar os mecanismos neurais.
+* Investigar a interação entre memória e aprendizado.
+* Explorar mecanismos de percepção.
+* Desenvolver experimentos de integração.
+* Avaliar seleção de respostas.
+
+**Fase 6 — Avaliação e escalabilidade**
+* Definir métricas experimentais.
+* Avaliar desempenho computacional.
+* Investigar escalabilidade.
+* Comparar configurações de rede.
+* Melhorar a reprodutibilidade.
+* Documentar limitações e resultados.
+
+## 8. Tecnologias e ferramentas
+
+As tecnologias abaixo representam ferramentas consideradas para a pesquisa e o desenvolvimento.
+
+| Tecnologia | Finalidade |
+| :--- | :--- |
+| **Python** | Linguagem de desenvolvimento. |
+| **PyTorch** | Operações tensoriais e processamento numérico. |
+| **NumPy** | Operações matemáticas. |
+| **snnTorch** | Experimentação com redes neurais pulsantes. |
+| **Brian2** | Simulação neural. |
+| **CUDA** | Possível aceleração em GPU NVIDIA. |
+| **Matplotlib** | Visualização de experimentos. |
+| **HDF5** | Possível persistência de dados. |
+
+A presença de uma tecnologia nesta lista não significa que ela já esteja integrada ao código-fonte.
+
+## 9. Pesquisa e referências científicas
+
+O desenvolvimento do NEUROCORE considera trabalhos científicos relacionados a redes neurais pulsantes, plasticidade sináptica, aprendizado neural e arquiteturas inspiradas no cérebro. As referências abaixo constituem uma base inicial de estudo, não uma declaração de que os mecanismos descritos já foram reproduzidos no projeto.
+
+### 9.1 Spiking Neural Networks
+1. **Deep Learning in Spiking Neural Networks (2019)**
+   * Autores: Amirhossein Tavanaei, Masoud Ghodrati, Saeed Reza Kheradpisheh, Timothée Masquelier e Anthony Maida.
+   * Uma revisão sobre métodos de treinamento de SNNs profundas, aprendizado supervisionado e não supervisionado e desafios relacionados à diferenciação dos disparos neurais.
+   * Publicação: Neural Networks, Volume 111, páginas 47–63.
+   * DOI: [https://doi.org/10.1016/j.neunet.2018.12.002](https://doi.org/10.1016/j.neunet.2018.12.002)
+
+2. **Unsupervised Learning of Digit Recognition Using Spike-Timing-Dependent Plasticity (2015)**
+   * Autores: Peter U. Diehl e Matthew Cook.
+   * Trabalho experimental sobre reconhecimento de padrões utilizando SNN, STDP, inibição lateral e limiar adaptativo. É uma referência relevante para investigar aprendizado não supervisionado e formação de representações por plasticidade sináptica.
+   * Publicação: Frontiers in Computational Neuroscience.
+   * DOI: [https://doi.org/10.3389/fncom.2015.00099](https://doi.org/10.3389/fncom.2015.00099)
+
+3. **Surrogate Gradient Learning in Spiking Neural Networks (2019)**
+   * Autores: Emre O. Neftci, Hesham Mostafa e Friedemann Zenke.
+   * Apresenta métodos de treinamento de SNN utilizando gradientes substitutos, uma abordagem importante para investigar arquiteturas profundas e aprendizado baseado em otimização.
+   * Publicação: IEEE Signal Processing Magazine.
+   * DOI: [https://doi.org/10.1109/MSP.2019.2931595](https://doi.org/10.1109/MSP.2019.2931595)
+
+### 9.2 Computação neuromórfica
+4. **Neuro-Inspired Computing Chips (2020)**
+   * Autores: Wenqiang Zhang e colaboradores.
+   * Revisão sobre chips de computação inspirada no cérebro, incluindo arquiteturas neuromórficas, eficiência energética e capacidade de aprendizado local.
+   * Publicação: Nature Electronics.
+   * DOI: [https://doi.org/10.1038/s41928-020-0435-7](https://doi.org/10.1038/s41928-020-0435-7)
+
+5. **Spike-Based Neuromorphic Computing: An Overview from Bio-Inspiration to Hardware Architectures and Learning Mechanisms (2026)**
+   * Autores: Anteneh Gebregiorgis e colaboradores.
+   * Revisão abrangente sobre modelos neuronais, mecanismos de aprendizado, arquiteturas neuromórficas e implementação em hardware.
+   * Publicação: Microprocessors and Microsystems.
+   * DOI: [https://doi.org/10.1016/j.micpro.2025.105240](https://doi.org/10.1016/j.micpro.2025.105240)
+
+### 9.3 Arquiteturas pós-Transformer e BDH
+O BDH não faz parte da arquitetura atual do NEUROCORE. Entretanto, representa uma linha de pesquisa potencialmente relevante para estudos futuros sobre memória sináptica, aprendizado Hebbiano, topologia de redes e processamento neural.
+
+6. **The Dragon Hatchling: The Missing Link between the Transformer and Models of the Brain (2025)**
+   * Autores: Adrian Kosowski, Przemysław Uznański, Jan Chorowski, Zuzanna Stamirowska e Michał Bartoszkiewicz.
+   * O trabalho apresenta a arquitetura Dragon Hatchling (BDH), baseada em uma rede biologicamente inspirada, com interações neuronais locais, topologia scale-free e mecanismos de aprendizado Hebbiano.
+   * Publicação: arXiv, setembro de 2025.
+   * Identificador: [arXiv:2509.26507](https://arxiv.org/abs/2509.26507)
+   
+   *Observação: BDH não deve ser tratado como sinônimo de SNN convencional. Apesar de compartilhar conceitos de neurônios pulsantes e plasticidade sináptica, sua arquitetura e seus objetivos computacionais são diferentes.*
+
+## 10. Direções futuras de pesquisa
+
+Além do desenvolvimento inicial baseado em SNN, o NEUROCORE poderá investigar outras arquiteturas e abordagens relacionadas à computação inspirada no cérebro. Entre as possibilidades de pesquisa:
+* Topologias neurais scale-free.
+* Redes com conectividade modular.
+* Aprendizado Hebbiano local.
+* Memória de trabalho baseada em plasticidade sináptica.
+* Integração de mecanismos STDP e aprendizado por recompensa.
+* Comparação entre arquiteturas SNN e modelos pós-Transformer.
+* Investigação de arquiteturas híbridas.
+* Avaliação de formulações adequadas para execução em GPU.
+* Possível integração futura de conceitos inspirados no BDH.
+
+Essas possibilidades não representam decisões arquiteturais definitivas. Qualquer integração deverá ser precedida por estudo teórico, prototipagem e avaliação experimental.
+
+## 11. Desafios técnicos em aberto
+
+O desenvolvimento de uma arquitetura baseada em SNN apresenta desafios que precisam ser investigados:
+* Eficiência da simulação de grandes populações neuronais.
+* Gerenciamento de conectividade esparsa.
+* Estabilidade da plasticidade sináptica.
+* Retenção e recuperação de padrões.
+* Interação entre diferentes mecanismos de aprendizado.
+* Definição de métricas adequadas.
+* Generalização em diferentes ambientes.
+* Custo computacional e energético.
+* Reprodutibilidade dos experimentos.
+
+Esses desafios fazem parte da própria investigação e poderão influenciar as decisões arquiteturais futuras.
+
+## 12. Estrutura prevista do repositório
+
+A estrutura abaixo representa uma organização de referência, sujeita a modificações durante o desenvolvimento.
 
 ```text
-.
+NEUROCORE/
+│
 ├── README.md
-├── architecture.md
-├── experiments_log.md
-└── math_models.md
+│
+├── docs/
+│   ├── VISION.md
+│   ├── ARCHITECTURE.md
+│   ├── ROADMAP.md
+│   ├── RESEARCH_NOTES.md
+│   ├── EXPERIMENTS.md
+│   └── OPEN_QUESTIONS.md
+│
+├── src/
+│   ├── neural/
+│   ├── memory/
+│   ├── learning/
+│   ├── cognitive/
+│   └── evaluation/
+│
+├── experiments/
+│
+├── tests/
+│
+├── Assets/
+│
+├── config/
+│
+└── LICENSE
 ```
 
-O arquivo `experiments_log.md` documenta os resultados dos testes. Confirme se todos os arquivos e diretórios citados existem na sua cópia do repositório.
+*Nem todos os diretórios e componentes estão necessariamente implementados.*
 
-## 7. Execução
+## 13. Princípios de desenvolvimento
 
-Os logs fornecidos mostram comandos de teste executados no ambiente Windows. A estrutura e os nomes dos módulos devem corresponder aos arquivos presentes na versão local do repositório.
+O NEUROCORE seguirá alguns princípios orientadores:
+* **Investigação antes de afirmação:** Hipóteses devem ser avaliadas por meio de experimentos.
+* **Desenvolvimento incremental:** A arquitetura será construída progressivamente, permitindo validar componentes antes de integrá-los.
+* **Documentação transparente:** Funcionalidades planejadas não serão apresentadas como implementadas.
+* **Reprodutibilidade:** Experimentos devem registrar parâmetros e condições de execução sempre que possível.
+* **Evolução arquitetural:** Decisões técnicas poderão ser revistas conforme novas evidências forem obtidas.
 
-### 7.1 Criar e ativar o ambiente virtual
+## 14. Participação e contribuições
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+O NEUROCORE é um projeto experimental em evolução. Discussões técnicas, sugestões de arquitetura, estudos relacionados a SNN e contribuições para a pesquisa são bem-vindos.
 
-Instale as dependências, caso o repositório contenha `requirements.txt`:
+O objetivo é construir uma base de investigação que permita explorar novas possibilidades de arquiteturas neurais.
 
-```powershell
-pip install -r requirements.txt
-```
+## 15. Licença
 
-### 7.2 Executar os testes
+A licença do projeto será definida e documentada no arquivo `LICENSE`. Consulte esse arquivo para conhecer as condições de utilização, modificação e distribuição do código.
 
-Execute os comandos a partir da raiz do repositório. Os nomes abaixo aparecem nos logs fornecidos:
-
-```powershell
-python -m experiments.test_01_lif_base
-python -m experiments.test_02_stdp
-python -m experiments.test_03_rstdp
-python -m experiments.test_04_neurocore_02
-python -m experiments.test_05_scale_10k
-python -m experiments.test_06_neurocore_03_agent
-python -m experiments.test_07_neurocore
-python -m experiments.test_08_cortical_modules
-python -m experiments.test_09_memory_modules
-python -m experiments.test_10_perception_modules
-python -m experiments.test_11_monitoring
-python -m experiments.test_12_scale_100k
-python -m experiments.test_13_scale_1m
-python -m experiments.test_14_generate_plots
-python -m experiments.test_15_generalization
-python -m experiments.test_16_dynamic_1m
-python -m experiments.test_17_homeostasis_recovery
-python -m experiments.test_18_learning_retention
-```
-
-Execute apenas os comandos correspondentes aos arquivos existentes na sua cópia do repositório. Os nomes de módulos registrados nos logs não garantem que esses arquivos estejam presentes na versão atual.
-
-## 8. Limites dos resultados atuais
-
-Os testes disponíveis documentam a execução de componentes e testes de escalabilidade estrutural em condições específicas. Eles não demonstram todos os objetivos descritos no projeto.
-
-Em particular:
-
-- A alocação de um milhão de neurônios não comprova aprendizagem útil nessa escala.
-- Os logs não informam a especificação completa do hardware, a versão exata do PyTorch ou todas as condições de carga.
-- Os custos energéticos indicados pelos módulos de avaliação são estimativas; o log dinâmico registra zero joules, sem informações suficientes para validar uma medição física.
-- Os resultados de metas não incluem uma definição completa da métrica nem um protocolo de repetição.
-- O teste de memória associativa recuperou o padrão `[0., 1., 0., 1.]` no log fornecido. Isso documenta a saída desse teste, mas não comprova robustez da memória em condições variadas.
-- Os logs registram avisos do PyTorch sobre verificações de invariantes de tensores esparsos desativadas.
-- O teste de generalização registra 100% de sucesso no Ambiente B, mas não documenta detalhes suficientes sobre número de tentativas, sementes e diversidade dos ambientes para concluir que há generalização ampla.
-- O teste dinâmico anuncia 1.000 passos, mas o relatório final registra 50. Essa divergência precisa ser investigada.
-- Resultados de execuções distintas não devem ser comparados como se viessem de um experimento controlado, especialmente quando densidade esparsa e outras condições variam.
-
-## 9. Próximas prioridades técnicas
-
-1. Registrar hardware, sistema operacional, versões das bibliotecas, sementes e configuração em cada execução.
-2. Investigar os avisos e validar a construção e a atualização de pesos esparsos.
-3. Repetir os testes de memória associativa com diferentes padrões e níveis de ruído.
-4. Definir métricas reproduzíveis para sucesso, retenção e generalização.
-5. Repetir os testes com sementes controladas e múltiplas execuções.
-6. Separar resultados de alocação, simulação, aprendizagem e desempenho energético.
-7. Validar as estimativas de energia por meio de um método de medição documentado.
-8. Investigar por que o teste dinâmico registra 50 passos quando anuncia 1.000.
-9. Documentar as condições dos testes de generalização e avaliar mais ambientes e tentativas.
-
-## 10. Licença
-
-O projeto declara usar a licença MIT. Confirme se o arquivo `LICENSE` está presente e se seu conteúdo corresponde à licença aplicada ao repositório.
+<br>
