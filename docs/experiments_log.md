@@ -22,6 +22,31 @@ Este documento consolida os resultados impressos nos registros de execução for
 | `test_14_generate_plots` | Gerar gráficos dos experimentos. | Três arquivos de gráfico foram salvos. |
 | `test_15_generalization` | Testar adaptação no Ambiente A e transferência para o Ambiente B. | Eficiência de 70% no Ambiente A e taxa de sucesso registrada de 100% no Ambiente B. |
 | `test_16_dynamic_1m` | Testar simulação dinâmica com 1.000.000 de neurônios. | O cabeçalho anuncia 1.000 passos, mas o log registra 50 passos; tempo total de 50,28 s. |
+| `test_17_homeostasis_recovery` | Validar a recuperação homeostática e limites de atividade. | Passou. Ajuste de limiar estabilizou superatividade. |
+| `test_18_learning_retention` | Validar consolidação na memória de longo prazo (LTM). | Passou. Memória apagada e restaurada com exatidão. |
+| `test_19_synapse_consistency` | Testar limites e poda da matriz esparsa. | Passou. 47.559 sinapses ativas podadas para 23.780. |
+| `test_20_homeostasis` | Validação de estabilidade a longo prazo. | Passou. Limiares adaptados para manter a estabilidade. |
+| `test_21_full_integration` | Integração total (Itens 6 a 13). | Passou. Recompensa processada e reset bem-sucedido. |
+| `ablation_study` | Estudo de ablação (Precisão Direcional). | Rede adaptativa (56,44%) superou rede estática (20,0%). |
+| `attention_decision_validation` | Atenção seletiva vs estímulos distratores. | Concluído com aviso sobre diferenciação de padrões. |
+| `continual_learning_retention` | Esquecimento catastrófico. | Retenção subiu para 40% com o uso de replay episódico. |
+| `continuous_learning_generalization`| Generalização contínua. | Concluído, mas a taxa impressa (370.000.000%) é uma anomalia. |
+| `evaluate_saved_checkpoint` | Avaliar checkpoint salvo. | **Falha de execução** (AttributeError). |
+| `latency_profile` | Benchmark de latência por passo. | 2,93 ms/tick e Throughput de 341,76 passos/segundo. |
+| `memory_noise_validation` | Recuperação temporal sob 30% de ruído. | Passou. Similaridade funcional de 94,77%. |
+| `memory_profile` | Profiling de RAM/VRAM por escala. | RAM máxima 2,84MB. VRAM 0MB (rodou em CPU). |
+| `memory_test` | Treino, Snapshot, Wipe e Restore. | Passou. Comportamento restaurado idêntico. |
+| `million_neuron_scale_test` | Benchmark unificado (10k, 100k, 1M). | 1M neurônios, latência forward W*x de 8,37 ms. |
+| `neural_dynamics_analysis` | Dinâmica (estabilidade & frequência). | Camada Oculta estabilizou em ~62Hz. |
+| `neuron_test` | Teste de unidade de neurônio. | **Falha de sintaxe** (Erro de codificação utf-8). |
+| `plasticity_validation` | Validação de STDP e R-STDP. | Passou. Plasticidade temporal e dopaminérgica ativas. |
+| `reinforcement_learning_assessment`| Avaliação RL. | **Falha de execução** (TypeError em VirtualWorld2D). |
+| `scalability_stress_test` | Estresse alterando densidade esparsa. | Rede Deep SNN suportou a propagação a 12,64 ms/tick. |
+| `surrogate_gradient_validation` | Validação de BPTT. | Acurácia de spikes 56,2% (C.I. 95%). |
+| `test_directional_sensors` | Sensores direcionais virtuais. | **Falha de execução** (TypeError). |
+| `test_evaluate_saved_checkpoint` | Testar avaliação de checkpoint salvo. | **Falha de execução** (AttributeError). |
+| `test_td_critic` | Teste do crítico TD(0). | Passou. |
+| `test_training_resume` | Retomar treinamento. | **Falha de execução** (TypeError). |
 
 ## 2. Experimentos de aprendizado
 
@@ -335,7 +360,36 @@ python -m experiments.test_16_dynamic_1m
 
 É necessário inspecionar a implementação de `test_16_dynamic_1m` e repetir o teste para determinar por que somente 50 passos foram registrados.
 
-## 8. Avisos técnicos observados
+## 8. Relatórios de Erros e Falhas Técnicas (Crashes)
+
+Durante a execução da bateria de testes adicionais, cinco experimentos específicos apresentaram interrupção forçada (`Traceback`). Os erros foram consolidados abaixo para orientar a correção do código-fonte.
+
+**1. `evaluate_saved_checkpoint`** e **`test_evaluate_saved_checkpoint`**
+```text
+AttributeError: 'ContinualLearningAgent' object has no attribute 'restore_memory'
+AttributeError: 'ContinualLearningAgent' object has no attribute 'save_checkpoint'
+```
+* **Diagnóstico:** A classe `ContinualLearningAgent` não implementa ou teve seus métodos de checkpointing (`restore_memory` / `save_checkpoint`) renomeados ou movidos para outro módulo (como o `MemoryEngine`).
+
+**2. `test_directional_sensors`** e **`reinforcement_learning_assessment`**
+```text
+TypeError: VirtualWorld2D.__init__() got an unexpected keyword argument 'sensor_mode'
+```
+* **Diagnóstico:** O construtor (`__init__`) da classe de ambiente `VirtualWorld2D` não suporta o parâmetro `sensor_mode`. A assinatura da classe mudou e os testes não foram atualizados.
+
+**3. `test_training_resume`**
+```text
+TypeError: run_training_and_visualization() got an unexpected keyword argument 'seed'
+```
+* **Diagnóstico:** A função chamada no script de teste não suporta o argumento nomeado `seed` em sua definição atual.
+
+**4. `neuron_test`**
+```text
+SyntaxError: (unicode error) 'utf-8' codec can't decode byte 0xf3 in position 1: invalid continuation byte
+```
+* **Diagnóstico:** O arquivo `neuron_test.py` contém caracteres não reconhecidos (possivelmente acentuação) salvos em um formato diferente de UTF-8 logo na sua primeira linha (`'''Módulo...'''`).
+
+## 9. Avisos técnicos observados
 
 Os logs de redes e sinapses esparsas apresentam repetidamente o aviso do PyTorch:
 
@@ -350,8 +404,9 @@ Ações recomendadas:
 3. Criar testes específicos para construção, atualização, coalescência, salvamento e carregamento de pesos esparsos.
 4. Registrar versões de Python, PyTorch, CUDA e bibliotecas relevantes em cada execução.
 5. Repetir os testes com sementes controladas e múltiplas execuções.
+6. **Priorizar as correções de código das assinaturas de classes e imports descritas na Seção 8.**
 
-## 9. Conclusões permitidas pelos registros
+## 10. Conclusões permitidas pelos registros
 
 Os logs fornecidos documentam:
 
@@ -360,11 +415,12 @@ Os logs fornecidos documentam:
 - geração de arquivos de gráficos;
 - alocação de redes com 10 mil, 100 mil e 1 milhão de neurônios;
 - execução de ciclos de teste nas escalas de 100 mil e 1 milhão de neurônios;
-- resultados de metas e taxas impressas por testes específicos.
+- resultados de metas e taxas impressas por testes específicos;
+- **a ocorrência de 6 falhas críticas na arquitetura de testes devido à dessincronização de interfaces (API).**
 
 Os registros, isoladamente, **não comprovam** inteligência geral, capacidade cognitiva robusta em escala de um milhão de neurônios, generalização ampla, eficiência energética física ou reprodutibilidade independente. Essas afirmações exigem definições operacionais, protocolos controlados, dados brutos e validações adicionais.
 
-## 10. Rastreabilidade dos comandos
+## 11. Rastreabilidade dos comandos
 
 Os comandos abaixo aparecem nos registros fornecidos:
 

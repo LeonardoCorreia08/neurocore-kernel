@@ -144,7 +144,7 @@ def run_neurocore_02_experiment():
         print(f"Episodio {episode + 1}/{num_episodes} | Passos: {steps:03d} | Metas Acumuladas: {total_goals_reached}")
 
     # Salvar Raster Plot do último episódio
-    SpikeVisualizer.plot_raster(episode_spikes, filename="docs/spike_raster.png")
+    SpikeVisualizer.plot_raster(episode_spikes, filename="assets/spike_raster.png")
     print("Experimento NeuroCore 0.2 otimizado concluído com sucesso!")
 
 if __name__ == "__main__":
