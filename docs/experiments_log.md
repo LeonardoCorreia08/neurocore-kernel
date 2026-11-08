@@ -385,6 +385,31 @@ python -m experiments.test_13_scale_1m
 python -m experiments.test_14_generate_plots
 python -m experiments.test_15_generalization
 python -m experiments.test_16_dynamic_1m
+python -m experiments.test_17_homeostasis_recovery
+python -m experiments.test_18_learning_retention
+python -m experiments.test_19_synapse_consistency
+python -m experiments.test_20_homeostasis
+python -m experiments.test_21_full_integration
+python -m experiments.ablation_study
+python -m experiments.attention_decision_validation
+python -m experiments.continual_learning_retention
+python -m experiments.continuous_learning_generalization
+python -m experiments.evaluate_saved_checkpoint
+python -m experiments.latency_profile
+python -m experiments.memory_noise_validation
+python -m experiments.memory_profile
+python -m experiments.memory_test
+python -m experiments.million_neuron_scale_test
+python -m experiments.neural_dynamics_analysis
+python -m experiments.neuron_test
+python -m experiments.plasticity_validation
+python -m experiments.reinforcement_learning_assessment
+python -m experiments.scalability_stress_test
+python -m experiments.surrogate_gradient_validation
+python -m experiments.test_directional_sensors
+python -m experiments.test_evaluate_saved_checkpoint
+python -m experiments.test_td_critic
+python -m experiments.test_training_resume
 ```
 
 Execute os comandos a partir da raiz do repositório e confirme que os arquivos correspondentes existem na versão local. Os resultados descritos neste documento pertencem aos logs fornecidos; novas execuções podem produzir valores diferentes.
