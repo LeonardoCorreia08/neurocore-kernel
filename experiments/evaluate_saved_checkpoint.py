@@ -54,8 +54,9 @@ def evaluate_checkpoint(
         memory,
         SensorEncoder(max_rate=100.0),
     )
-    if not agent.restore_memory(checkpoint_name):
+    if not memory._load_checkpoint(checkpoint_name):
         raise FileNotFoundError(
+            f"Checkpoint não encontrado: checkpoints/{checkpoint_name}. "
             f"Checkpoint não encontrado: checkpoints/{checkpoint_name}. "
             "Execute o treino antes da avaliação."
         )

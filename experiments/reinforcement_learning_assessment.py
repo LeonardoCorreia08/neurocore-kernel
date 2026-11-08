@@ -52,7 +52,7 @@ def fixed_eval_cases(seed: int, count: int) -> list[tuple[np.ndarray, np.ndarray
     # Use an independent, reproducible RNG so baseline, pre-training and
     # post-training evaluations share exactly the same maps/start-goal pairs.
     rng = np.random.RandomState(seed + 100_000)
-    world = VirtualWorld2D(sensor_mode="directional")
+    world = VirtualWorld2D
     cases = []
     while len(cases) < count:
         start = rng.rand(2) * world.width
@@ -72,7 +72,7 @@ def fixed_eval_cases(seed: int, count: int) -> list[tuple[np.ndarray, np.ndarray
 
 def evaluate_agent(agent, cases, seed: int) -> dict:
     random.seed(seed + 300_000)
-    world = VirtualWorld2D(sensor_mode="directional")
+    world = VirtualWorld2D
     counts = np.zeros(4, dtype=np.int64)
     rewards, steps, successes = [], [], []
     silent_decisions = 0
@@ -116,7 +116,7 @@ def evaluate_agent(agent, cases, seed: int) -> dict:
 
 
 def evaluate_random(cases, seed: int) -> dict:
-    world = VirtualWorld2D(sensor_mode="directional")
+    world = VirtualWorld2D
     rng = random.Random(seed + 200_000)
     rewards, steps, successes = [], [], []
     counts = np.zeros(4, dtype=np.int64)
@@ -152,7 +152,7 @@ def evaluate_random(cases, seed: int) -> dict:
 def train_one_seed(seed: int) -> dict:
     seed_all(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    world = VirtualWorld2D(sensor_mode="directional")
+    world = VirtualWorld2D
     engine = SpikeEngine(
         layer_sizes=[6, 32, 4],
         density=0.25,

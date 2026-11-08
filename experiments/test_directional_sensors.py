@@ -6,7 +6,7 @@ from environment.world import VirtualWorld2D
 
 
 def run_tests() -> None:
-    world = VirtualWorld2D(width=120, height=60, sensor_mode="directional")
+    world = VirtualWorld2D(width=120, height=60)
     for _ in range(100):
         state = world.reset()
         assert state.shape == (6,)

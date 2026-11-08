@@ -28,7 +28,7 @@ def run_tests() -> None:
             agent = ContinualLearningAgent(
                 simulator, memory, SensorEncoder(max_rate=100.0)
             )
-            agent.save_checkpoint(
+            memory.save_checkpoint(
                 "smoke.pt",
                 runtime_metadata={
                     "training_state": {

@@ -18,7 +18,6 @@ def run_tests() -> None:
             first = run_training_and_visualization(
                 episodes=2,
                 checkpoint_every=1,
-                seed=123,
                 checkpoint_name="resume_smoke.pt",
                 fresh=True,
                 render=False,
@@ -35,8 +34,7 @@ def run_tests() -> None:
 
             second = run_training_and_visualization(
                 episodes=2,
-                checkpoint_every=1,
-                seed=123,
+                checkpoint_every=1,                
                 checkpoint_name="resume_smoke.pt",
                 fresh=False,
                 render=False,
