@@ -1,9 +1,7 @@
-"""teste v5 commit"""
 from __future__ import annotations
 
 import argparse
 import random
-texto bolha
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
