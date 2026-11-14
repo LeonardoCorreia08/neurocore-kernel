@@ -1,4 +1,4 @@
-"""Ponto de entrada do treinamento NeuroCore, com config central injetada."""
+"""teste v1 commit"""
 from __future__ import annotations
 
 import argparse
