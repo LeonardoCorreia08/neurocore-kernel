@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import random
-texto novissimo
+texto no
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
