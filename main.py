@@ -1,4 +1,4 @@
-"""teste v2 commit"""
+"""teste v3 commit"""
 from __future__ import annotations
 
 import argparse
